@@ -438,57 +438,20 @@
         function termLoading(msg){termWrite(`<span class="t-info">${msg}</span>\n<span class="t-dim">Querying AI engine...</span>`)}
 
         // ---- WebSocket ----
-        const isVercel=location.hostname.includes('vercel.app');
-        let wsRetries=0,maxRetries=isVercel?2:Infinity;
+        const RAILWAY_HOST='rekt-scanner-api-production.up.railway.app';
+        const isRemote=location.hostname!=='localhost'&&location.hostname!=='127.0.0.1';
+        const apiBase=isRemote?'https://'+RAILWAY_HOST:'';
+        const wsBase=isRemote?'wss://'+RAILWAY_HOST:'ws://'+location.host;
 
         function connectWS(){
-            if(wsRetries>=maxRetries){showDemoMode();return}
-            const p=location.protocol==='https:'?'wss:':'ws:';
-            ws=new WebSocket(p+'//'+location.host+'/ws');
-            ws.onopen=()=>{wsRetries=0;document.getElementById('status-text').textContent='MONITORING';document.getElementById('status-dot').style.background='var(--green)'};
-            ws.onclose=()=>{wsRetries++;document.getElementById('status-text').textContent=wsRetries>=maxRetries?'DEMO MODE':'RECONNECTING';setTimeout(connectWS,3000)};
+            ws=new WebSocket(wsBase+'/ws');
+            ws.onopen=()=>{document.getElementById('status-text').textContent='MONITORING';document.getElementById('status-dot').style.background='var(--green)'};
+            ws.onclose=()=>{document.getElementById('status-text').textContent='RECONNECTING';document.getElementById('status-dot').style.background='var(--orange)';setTimeout(connectWS,3000)};
             ws.onerror=()=>{};
             ws.onmessage=e=>{const d=JSON.parse(e.data);handleEvent(d)};
             setInterval(()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'ping'}))},30000);
         }
 
-        function showDemoMode(){
-            document.getElementById('status-text').textContent='DEMO MODE';
-            document.getElementById('status-dot').style.background='var(--orange)';
-            document.getElementById('terminal').innerHTML=`
-<span class="t-warn">━━━ DEMO MODE ━━━━━━━━━━━━━━━━━━━━</span>
-
-<span class="t-info">REKT Scanner frontend is deployed on Vercel</span>
-<span class="t-info">but the backend needs to run locally.</span>
-
-<span class="t-prompt">$ HOW TO RUN:</span>
-<span class="t-white">  1. git clone https://github.com/YouthAIAgent/REKT-SCANNER.git</span>
-<span class="t-white">  2. cd REKT-SCANNER</span>
-<span class="t-white">  3. pip install fastapi uvicorn httpx pydantic python-dotenv</span>
-<span class="t-white">  4. cp .env.example .env  (add your API keys)</span>
-<span class="t-white">  5. python backend/scanner.py</span>
-<span class="t-white">  6. Open http://localhost:8888</span>
-
-<span class="t-dim">The full scanner with live monitoring, AI commentary,</span>
-<span class="t-dim">threat alerts, and all features runs at localhost:8888</span>
-
-<span class="t-prompt">$ FEATURES:</span>
-<span class="t-info">  Real-time Base monitoring | 7 vuln categories</span>
-<span class="t-info">  AI voice commentary | Code forensics</span>
-<span class="t-info">  Roast / Debate / Horror / Podcast</span>
-<span class="t-info">  Deployer reputation | Scam bingo</span>
-<span class="t-info">  Moltbook + Twitter auto-alerts</span>
-<span class="t-info">  Public Agent API for Clawd Kitchen</span>
-
-<span class="t-purple">Built for Clawd Kitchen Hackathon</span>
-<span class="t-purple">by @_0xrekt | @Web3__Youth</span>`;
-            // Show demo stats
-            document.getElementById('s-blocks').textContent='24/7';
-            document.getElementById('s-contracts').textContent='ALL';
-            document.getElementById('s-threats').textContent='LIVE';
-            document.getElementById('s-block').textContent='BASE';
-            document.getElementById('s-deployers').textContent='DB';
-        }
 
         function handleEvent(d){
             if(d.type==='init'){updateStats(d.stats);if(d.recent)d.recent.reverse().forEach(c=>addCard(c))}
@@ -624,7 +587,7 @@
         // ---- Tab: Roast ----
         async function loadRoast(addr){
             termLoading(`Roasting ${addr.slice(0,10)}...`);
-            try{const r=await(await fetch(`/api/roast/${addr}`)).json();
+            try{const r=await(await fetch(`${apiBase}/api/roast/${addr}`)).json();
                 let h=`<span class="t-danger">━━━━ ROAST MY CONTRACT ━━━━━━━━━━</span>\n\n`;
                 h+=`<span class="t-prompt">$ roast</span> <span class="t-info">${addr}</span>\n`;
                 h+=`<span class="t-dim">${r.contract_name||'Unknown'} | Risk: ${r.risk?.score||'?'}</span>\n\n`;
@@ -638,7 +601,7 @@
         // ---- Tab: Debate ----
         async function loadDebate(addr){
             termLoading(`Starting AI debate on ${addr.slice(0,10)}...`);
-            try{const r=await(await fetch(`/api/debate/${addr}`)).json();
+            try{const r=await(await fetch(`${apiBase}/api/debate/${addr}`)).json();
                 let h=`<span class="t-purple">━━━━ AI vs AI DEBATE ━━━━━━━━━━━━</span>\n\n`;
                 h+=`<span class="t-prompt">$ debate</span> <span class="t-info">${addr}</span>\n`;
                 h+=`<span class="t-dim">Risk: ${r.risk?.score||'?'}/100</span>\n\n`;
@@ -653,7 +616,7 @@
         // ---- Tab: Horror ----
         async function loadHorror(addr){
             termLoading(`Generating horror story for ${addr.slice(0,10)}...`);
-            try{const r=await(await fetch(`/api/horror/${addr}`)).json();
+            try{const r=await(await fetch(`${apiBase}/api/horror/${addr}`)).json();
                 let h=`<span class="t-warn">━━━━ HORROR STORY ━━━━━━━━━━━━━━━</span>\n\n`;
                 h+=`<span class="t-prompt">$ horror</span> <span class="t-info">${addr}</span>\n\n`;
                 h+=`<span class="t-white" style="font-size:11px;line-height:2.0">${esc(r.story)}</span>\n\n`;
@@ -666,7 +629,7 @@
         // ---- Tab: Hall of Shame ----
         async function loadShame(){
             termLoading('Loading Hall of Shame...');
-            try{const r=await(await fetch('/api/hall-of-shame?limit=15')).json();
+            try{const r=await(await fetch(apiBase+'/api/hall-of-shame?limit=15')).json();
                 if(!r.shame?.length){termWrite(`<span class="t-dim">No scammers caught yet. Keep scanning...</span>`);return}
                 let h=`<span class="t-danger">━━━━ HALL OF SHAME ━━━━━━━━━━━━━━</span>\n`;
                 h+=`<span class="t-dim">Top ${r.shame.length} worst deployers on Base</span>\n\n`;
@@ -683,7 +646,7 @@
         // ---- Tab: Graveyard ----
         async function loadGraveyard(){
             termLoading('Digging up the graveyard...');
-            try{const r=await(await fetch('/api/graveyard')).json();
+            try{const r=await(await fetch(apiBase+'/api/graveyard')).json();
                 if(!r.tombstones?.length){termWrite(`<span class="t-dim">Graveyard empty. No dead contracts yet...</span>`);return}
                 let h=`<span class="t-dim">━━━━ CONTRACT GRAVEYARD ━━━━━━━━━━</span>\n`;
                 h+=`<span class="t-dim">${r.total_dead} contracts rest here</span>\n\n`;
@@ -704,7 +667,7 @@
         // ---- Tab: Digest/Podcast ----
         async function loadDigest(){
             termLoading('Generating REKT Daily Podcast...');
-            try{const r=await(await fetch('/api/digest')).json();
+            try{const r=await(await fetch(apiBase+'/api/digest')).json();
                 let h=`<span class="t-purple">━━━━ REKT DAILY PODCAST ━━━━━━━━━</span>\n\n`;
                 h+=`<span class="t-prompt">$ rekt-daily --generate</span>\n`;
                 h+=`<span class="t-dim">${new Date().toLocaleString()}</span>\n\n`;
@@ -722,7 +685,7 @@
             o.classList.toggle('show');if(o.classList.contains('show'))loadBingo();
         }
         async function loadBingo(){
-            try{const r=await(await fetch('/api/bingo')).json();
+            try{const r=await(await fetch(apiBase+'/api/bingo')).json();
                 const g=document.getElementById('bingo-grid');g.innerHTML='';
                 r.squares.forEach(s=>{const d=document.createElement('div');
                     d.className=`bingo-sq${s.found?' found':''}${s.id==='free'?' free':''}`;
@@ -735,7 +698,7 @@
 
         // ---- Weather ----
         async function loadWeather(){
-            try{const r=await(await fetch('/api/weather')).json();
+            try{const r=await(await fetch(apiBase+'/api/weather')).json();
                 const icons={1:'☀️',2:'⛅',3:'🌥️',4:'🌩️',5:'⛈️'};
                 document.getElementById('w-icon').textContent=icons[r.threat_level]||'🌀';
                 document.getElementById('w-text').textContent=r.condition||'?';
@@ -749,8 +712,8 @@
             termLoading(`Scanning ${addr}...`);
             try{
                 const[sr,ar]=await Promise.all([
-                    fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})}),
-                    fetch('/api/ai-audit/'+addr)
+                    fetch(apiBase+'/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})}),
+                    fetch(apiBase+'/api/ai-audit/'+addr)
                 ]);
                 const sd=await sr.json(),ad=await ar.json();
                 sd.ai_audit=ad.ai_audit||'';lastScanData=sd;updateLoss(sd);
