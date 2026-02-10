@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REKT Scanner | AI-Powered Smart Contract Security on Base</title>
+    <meta name="description" content="Autonomous AI security agent scanning Base mainnet for rug pulls, honeypots, and exploits in real-time.">
+    <meta property="og:title" content="REKT Scanner - AI Smart Contract Security">
+    <meta property="og:description" content="Real-time autonomous security agent protecting Base mainnet. Scanning every contract deployment 24/7.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#ff0033">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --red:#ff0033;--red-g:rgba(255,0,51,0.4);--green:#00ff41;--green-g:rgba(0,255,65,0.3);
+            --cyan:#00f0ff;--cyan-g:rgba(0,240,255,0.3);--orange:#ff6600;--yellow:#ffcc00;
+            --purple:#bf5fff;--purple-g:rgba(191,95,255,0.3);--pink:#ff00aa;
+            --bg:#030308;--bg2:#080812;--bg3:#0d0d1a;--border:rgba(0,240,255,0.08);
+            --text:#b0b0c0;--dim:#3a3a5a;--white:#e8e8f0;
+        }
+        html{scroll-behavior:smooth}
+        body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;overflow-x:hidden;cursor:default}
+        ::selection{background:var(--red);color:#fff}
+        ::-webkit-scrollbar{width:6px}
+        ::-webkit-scrollbar-track{background:var(--bg)}
+        ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+
+        /* ---- CURSOR TRAIL ---- */
+        .cursor-dot{position:fixed;width:6px;height:6px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9999;transition:opacity 0.3s;box-shadow:0 0 10px var(--cyan-g)}
+
+        /* ---- MATRIX CANVAS ---- */
+        #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.04;pointer-events:none}
+
+        /* ---- GRID BG ---- */
+        .grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;
+            background-image:linear-gradient(rgba(0,240,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.02) 1px,transparent 1px);
+            background-size:80px 80px}
+
+        /* ---- PARTICLES ---- */
+        #particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+        /* ---- SCANLINE ---- */
+        .scanline{position:fixed;top:0;left:0;width:100%;height:2px;
+            background:linear-gradient(90deg,transparent,var(--cyan),var(--green),var(--cyan),transparent);
+            opacity:0.12;z-index:50;animation:scanmove 4s linear infinite;pointer-events:none}
+        @keyframes scanmove{from{top:-2px}to{top:100vh}}
+
+        /* ---- CRT OVERLAY ---- */
+        .crt{position:fixed;top:0;left:0;width:100%;height:100%;z-index:49;pointer-events:none;
+            background:repeating-linear-gradient(0deg,rgba(0,0,0,0.06) 0px,rgba(0,0,0,0.06) 1px,transparent 1px,transparent 3px)}
+
+        /* ---- NAV ---- */
+        nav{position:fixed;top:0;left:0;width:100%;z-index:100;padding:12px 30px;display:flex;justify-content:space-between;align-items:center;
+            background:rgba(3,3,8,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all 0.3s}
+        nav.scrolled{padding:8px 30px;background:rgba(3,3,8,0.95)}
+        .nav-logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:6px;
+            background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+        .nav-links{display:flex;gap:24px;align-items:center}
+        .nav-links a{color:var(--dim);text-decoration:none;font-size:10px;letter-spacing:2px;text-transform:uppercase;transition:all 0.3s;font-weight:500;position:relative}
+        .nav-links a:hover{color:var(--cyan)}
+        .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--cyan);transition:width 0.3s}
+        .nav-links a:hover::after{width:100%}
+        .nav-btn{padding:8px 20px;background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Orbitron',sans-serif;
+            font-size:9px;letter-spacing:3px;cursor:pointer;border-radius:4px;transition:all 0.3s;text-decoration:none}
+        .nav-btn:hover{background:var(--red);color:#fff;box-shadow:0 0 25px var(--red-g)}
+
+        /* ---- CONTENT WRAPPER ---- */
+        .content{position:relative;z-index:1}
+
+        /* ---- HERO ---- */
+        .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:120px 20px 60px;position:relative}
+        .hero-glitch{font-family:'Orbitron',sans-serif;font-size:clamp(48px,10vw,110px);font-weight:900;letter-spacing:12px;
+            color:var(--white);position:relative;animation:glitchMain 4s infinite}
+        .hero-glitch::before,.hero-glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%}
+        .hero-glitch::before{color:var(--cyan);animation:glitch1 3s infinite;clip-path:polygon(0 0,100% 0,100% 35%,0 35%)}
+        .hero-glitch::after{color:var(--red);animation:glitch2 2.5s infinite;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%)}
+        @keyframes glitch1{0%,100%{transform:translate(0)}5%{transform:translate(-3px,1px)}10%{transform:translate(3px,-1px)}15%{transform:translate(0)}40%{transform:translate(2px,0)}45%{transform:translate(0)}}
+        @keyframes glitch2{0%,100%{transform:translate(0)}8%{transform:translate(3px,-2px)}12%{transform:translate(-2px,1px)}16%{transform:translate(0)}50%{transform:translate(-3px,0)}55%{transform:translate(0)}}
+        @keyframes glitchMain{0%,100%{text-shadow:none}2%{text-shadow:3px 0 var(--red),-3px 0 var(--cyan)}4%{text-shadow:none}42%{text-shadow:-2px 0 var(--cyan),2px 0 var(--red)}44%{text-shadow:none}}
+
+        .hero-sub{margin-top:20px;font-size:clamp(12px,2vw,16px);color:var(--dim);letter-spacing:4px;max-width:700px}
+        .hero-terminal{margin-top:40px;width:min(700px,90vw);text-align:left}
+        .term-window{background:rgba(8,8,18,0.9);border:1px solid var(--border);border-radius:12px;overflow:hidden;backdrop-filter:blur(10px);
+            box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 40px rgba(0,240,255,0.03)}
+        .term-bar{padding:10px 16px;background:rgba(0,0,0,0.4);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+        .term-dot{width:10px;height:10px;border-radius:50%}
+        .term-dot.r{background:#ff3b30}.term-dot.y{background:#ffcc00}.term-dot.g{background:#00ff41}
+        .term-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-left:10px}
+        .term-body{padding:20px;font-size:12px;line-height:2;min-height:200px}
+        .t-g{color:var(--green)}.t-c{color:var(--cyan)}.t-r{color:var(--red)}.t-o{color:var(--orange)}.t-d{color:var(--dim)}.t-w{color:var(--white)}.t-p{color:var(--purple)}.t-y{color:var(--yellow)}
+        .cursor-blink{display:inline-block;width:8px;height:16px;background:var(--green);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+        @keyframes blink{50%{opacity:0}}
+        .typed-line{opacity:0;animation:typeIn 0.3s ease forwards}
+        @keyframes typeIn{to{opacity:1}}
+
+        .hero-badges{margin-top:30px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+        .badge{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:9px;letter-spacing:2px;color:var(--dim);
+            background:rgba(0,240,255,0.03);transition:all 0.3s}
+        .badge:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 15px var(--cyan-g)}
+        .badge.live{border-color:var(--green);color:var(--green);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{box-shadow:0 0 5px var(--green-g)}50%{box-shadow:0 0 20px var(--green-g)}}
+
+        .hero-cta{margin-top:40px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+        .btn-primary{padding:14px 36px;background:linear-gradient(135deg,var(--red),#cc0000);border:none;color:#fff;
+            font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:4px;cursor:pointer;border-radius:6px;
+            transition:all 0.3s;text-decoration:none;display:inline-block;position:relative;overflow:hidden}
+        .btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);transition:left 0.5s}
+        .btn-primary:hover::before{left:100%}
+        .btn-primary:hover{box-shadow:0 0 30px var(--red-g);transform:translateY(-2px)}
+        .btn-secondary{padding:14px 36px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);
+            font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:4px;cursor:pointer;border-radius:6px;
+            transition:all 0.3s;text-decoration:none;display:inline-block}
+        .btn-secondary:hover{background:rgba(0,240,255,0.1);box-shadow:0 0 25px var(--cyan-g);transform:translateY(-2px)}
+
+        .scroll-indicator{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
+        .scroll-indicator span{font-size:8px;color:var(--dim);letter-spacing:3px}
+        .scroll-arrow{width:20px;height:20px;border-right:2px solid var(--cyan);border-bottom:2px solid var(--cyan);
+            transform:rotate(45deg);animation:scrollBounce 2s infinite;opacity:0.5}
+        @keyframes scrollBounce{0%,100%{transform:rotate(45deg) translate(0)}50%{transform:rotate(45deg) translate(5px,5px)}}
+
+        /* ---- SECTION STYLES ---- */
+        section{padding:100px 40px;position:relative}
+        .section-label{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:6px;color:var(--red);text-transform:uppercase;margin-bottom:8px}
+        .section-title{font-family:'Orbitron',sans-serif;font-size:clamp(24px,4vw,42px);font-weight:800;color:var(--white);letter-spacing:3px;margin-bottom:16px}
+        .section-desc{font-size:13px;color:var(--dim);max-width:600px;line-height:1.8}
+        .section-line{width:60px;height:2px;background:linear-gradient(90deg,var(--red),var(--purple));margin:20px 0 40px}
+
+        /* ---- STATS BAR ---- */
+        .stats-bar{display:flex;justify-content:center;gap:60px;padding:50px 20px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:wrap}
+        .stat-item{text-align:center}
+        .stat-num{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:900;
+            background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-label{font-size:9px;color:var(--dim);letter-spacing:3px;margin-top:6px;text-transform:uppercase}
+
+        /* ---- FEATURES GRID ---- */
+        .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1200px;margin:0 auto}
+        .feature-card{padding:28px;background:rgba(8,8,18,0.6);border:1px solid var(--border);border-radius:12px;
+            transition:all 0.4s;position:relative;overflow:hidden;cursor:default}
+        .feature-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;
+            background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity 0.3s}
+        .feature-card:hover{border-color:rgba(0,240,255,0.2);transform:translateY(-4px);background:rgba(8,8,18,0.8)}
+        .feature-card:hover::before{opacity:1}
+        .feature-card:hover .fc-icon{text-shadow:0 0 20px currentColor}
+        .fc-icon{font-size:28px;margin-bottom:14px;display:block;transition:all 0.3s}
+        .fc-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--white);margin-bottom:8px}
+        .fc-desc{font-size:11px;color:var(--dim);line-height:1.7}
+        .fc-tag{display:inline-block;margin-top:10px;padding:3px 8px;font-size:8px;letter-spacing:2px;border-radius:10px}
+        .fc-tag.critical{background:rgba(255,0,51,0.1);color:var(--red);border:1px solid rgba(255,0,51,0.2)}
+        .fc-tag.ai{background:rgba(191,95,255,0.1);color:var(--purple);border:1px solid rgba(191,95,255,0.2)}
+        .fc-tag.fun{background:rgba(0,240,255,0.1);color:var(--cyan);border:1px solid rgba(0,240,255,0.2)}
+
+        /* ---- HOW IT WORKS ---- */
+        .how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:30px;max-width:1000px;margin:0 auto}
+        .how-step{text-align:center;padding:30px 20px;position:relative}
+        .how-num{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:900;color:rgba(0,240,255,0.08);position:absolute;top:0;left:50%;transform:translateX(-50%)}
+        .how-icon{font-size:36px;margin-bottom:16px;display:block;position:relative;z-index:1}
+        .how-title{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--white);margin-bottom:8px}
+        .how-desc{font-size:10px;color:var(--dim);line-height:1.8}
+        .how-arrow{color:var(--dim);font-size:24px;display:flex;align-items:center;justify-content:center;opacity:0.3}
+
+        /* ---- VULN TABLE ---- */
+        .vuln-section{max-width:900px;margin:0 auto}
+        .vuln-row{display:flex;align-items:center;padding:16px 20px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;
+            background:rgba(8,8,18,0.4);transition:all 0.3s;gap:16px}
+        .vuln-row:hover{border-color:rgba(0,240,255,0.15);background:rgba(8,8,18,0.7);transform:translateX(4px)}
+        .vuln-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite}
+        .vuln-status.crit{background:var(--red);box-shadow:0 0 8px var(--red-g)}
+        .vuln-status.high{background:var(--orange);box-shadow:0 0 8px rgba(255,102,0,0.4)}
+        .vuln-status.med{background:var(--yellow);box-shadow:0 0 8px rgba(255,204,0,0.3)}
+        .vuln-name{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--white);min-width:140px}
+        .vuln-sev{font-size:9px;letter-spacing:2px;padding:3px 10px;border-radius:10px;min-width:80px;text-align:center}
+        .vuln-sev.crit{background:rgba(255,0,51,0.1);color:var(--red)}
+        .vuln-sev.high{background:rgba(255,102,0,0.1);color:var(--orange)}
+        .vuln-sev.med{background:rgba(255,204,0,0.08);color:var(--yellow)}
+        .vuln-desc{font-size:10px;color:var(--dim);flex:1}
+
+        /* ---- LIVE DEMO TERMINAL ---- */
+        .demo-section{max-width:900px;margin:0 auto}
+        .demo-terminal{background:rgba(3,3,8,0.95);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+            box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(0,240,255,0.02)}
+        .demo-bar{padding:12px 18px;background:rgba(0,0,0,0.5);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+        .demo-body{padding:24px;font-size:11px;line-height:2;min-height:300px;position:relative;overflow:hidden}
+        .demo-line{opacity:0;transform:translateX(-10px);transition:all 0.4s}
+        .demo-line.visible{opacity:1;transform:translateX(0)}
+
+        /* ---- AGENT API ---- */
+        .api-section{max-width:800px;margin:0 auto}
+        .api-block{background:rgba(8,8,18,0.6);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+        .api-header{padding:14px 20px;background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+        .api-method{padding:3px 10px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:1px}
+        .api-method.get{background:rgba(0,255,65,0.1);color:var(--green)}
+        .api-method.post{background:rgba(255,102,0,0.1);color:var(--orange)}
+        .api-path{font-size:11px;color:var(--cyan)}
+        .api-body{padding:18px 20px;font-size:10px;line-height:1.8}
+
+        /* ---- FOOTER ---- */
+        footer{padding:60px 40px 30px;border-top:1px solid var(--border);text-align:center;background:var(--bg2)}
+        .footer-logo{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:8px;
+            background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+        .footer-tagline{font-size:11px;color:var(--dim);margin-top:8px;letter-spacing:3px}
+        .footer-links{margin-top:24px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+        .footer-links a{color:var(--dim);text-decoration:none;font-size:10px;letter-spacing:2px;transition:color 0.3s;padding:6px 14px;border:1px solid var(--border);border-radius:20px}
+        .footer-links a:hover{color:var(--cyan);border-color:var(--cyan)}
+        .footer-copy{margin-top:30px;font-size:9px;color:var(--dim);letter-spacing:2px}
+        .footer-ascii{margin-top:20px;font-size:9px;color:rgba(255,0,51,0.2);line-height:1.4}
+
+        /* ---- REVEAL ANIMATION ---- */
+        .reveal{opacity:0;transform:translateY(30px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+        .reveal.visible{opacity:1;transform:translateY(0)}
+        .reveal-left{opacity:0;transform:translateX(-40px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+        .reveal-left.visible{opacity:1;transform:translateX(0)}
+
+        /* ---- FLOATING ORBS ---- */
+        .orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:0.04}
+        .orb-1{width:400px;height:400px;background:var(--red);top:10%;right:-100px}
+        .orb-2{width:300px;height:300px;background:var(--cyan);top:40%;left:-100px}
+        .orb-3{width:350px;height:350px;background:var(--purple);bottom:10%;right:10%}
+
+        /* ---- RESPONSIVE ---- */
+        @media(max-width:768px){
+            section{padding:60px 20px}
+            .nav-links a:not(.nav-btn){display:none}
+            .stats-bar{gap:30px}
+            .hero-glitch{letter-spacing:4px}
+            .how-arrow{display:none}
+            .features-grid{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="grid-bg"></div>
+    <div id="particles"></div>
+    <div class="scanline"></div>
+    <div class="crt"></div>
+
+    <!-- NAV -->
+    <nav id="nav">
+        <div class="nav-logo">REKT</div>
+        <div class="nav-links">
+            <a href="#features">FEATURES</a>
+            <a href="#how">HOW IT WORKS</a>
+            <a href="#vulns">THREATS</a>
+            <a href="#api">AGENT API</a>
+            <a href="https://rekt-scanner.vercel.app" class="nav-btn" target="_blank">LAUNCH APP</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <!-- HERO -->
+        <section class="hero" id="hero">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+
+            <div class="hero-glitch" data-text="REKT">REKT</div>
+            <div class="hero-sub">AUTONOMOUS AI SECURITY AGENT ON BASE MAINNET</div>
+
+            <div class="hero-badges">
+                <div class="badge live">LIVE ON BASE</div>
+                <div class="badge">CHAIN 8453</div>
+                <div class="badge">GROQ AI</div>
+                <div class="badge">24/7 MONITORING</div>
+                <div class="badge">7 VULN CATEGORIES</div>
+            </div>
+
+            <div class="hero-terminal">
+                <div class="term-window">
+                    <div class="term-bar">
+                        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                        <div class="term-title">rekt-scanner v4.0</div>
+                    </div>
+                    <div class="term-body" id="hero-term"></div>
+                </div>
+            </div>
+
+            <div class="hero-cta">
+                <a href="https://rekt-scanner.vercel.app" class="btn-primary" target="_blank">LAUNCH SCANNER</a>
+                <a href="https://github.com/YouthAIAgent/REKT-SCANNER" class="btn-secondary" target="_blank">VIEW SOURCE</a>
+            </div>
+
+            <div class="scroll-indicator">
+                <span>SCROLL</span>
+                <div class="scroll-arrow"></div>
+            </div>
+        </section>
+
+        <!-- STATS -->
+        <div class="stats-bar">
+            <div class="stat-item reveal">
+                <div class="stat-num" data-target="24">0</div>
+                <div class="stat-label">FEATURES</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-num" data-target="7">0</div>
+                <div class="stat-label">VULN CATEGORIES</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-num" data-target="22">0</div>
+                <div class="stat-label">API ENDPOINTS</div>
+            </div>
+            <div class="stat-item reveal">
+                <div class="stat-num" data-target="2">0</div>
+                <div class="stat-label">SECONDS / BLOCK</div>
+            </div>
+        </div>
+
+        <!-- FEATURES -->
+        <section id="features">
+            <div class="reveal">
+                <div class="section-label">// WEAPONS LOADED</div>
+                <div class="section-title">FEATURE ARSENAL</div>
+                <div class="section-desc">Every tool you need to detect scams, analyze contracts, and protect your bags. Powered by AI and pure paranoia.</div>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--red)">&#9673;</span>
+                    <div class="fc-title">REAL-TIME MONITORING</div>
+                    <div class="fc-desc">Scans every single contract deployment on Base mainnet. Every block. Every transaction. Nothing escapes.</div>
+                    <span class="fc-tag critical">CORE</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--cyan)">&lt;/&gt;</span>
+                    <div class="fc-title">CODE FORENSICS</div>
+                    <div class="fc-desc">Pinpoints exact line numbers of malicious code. Shows you WHERE the danger is hiding in the source.</div>
+                    <span class="fc-tag critical">CORE</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--purple)">&#9041;</span>
+                    <div class="fc-title">AI VOICE COMMENTARY</div>
+                    <div class="fc-desc">Sports-style AI narration of threats. Like a war correspondent reporting live from the blockchain frontline.</div>
+                    <span class="fc-tag ai">AI</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--orange)">&#9888;</span>
+                    <div class="fc-title">ELI5 SCAM REPORTS</div>
+                    <div class="fc-desc">AI explains complex scams in simple words anyone can understand. No crypto jargon needed.</div>
+                    <span class="fc-tag ai">AI</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--green)">&#9733;</span>
+                    <div class="fc-title">DEPLOYER REPUTATION</div>
+                    <div class="fc-desc">Tracks every deployer wallet. Builds trust scores over time. Identifies repeat scammers before they strike.</div>
+                    <span class="fc-tag critical">CORE</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--yellow)">&#9835;</span>
+                    <div class="fc-title">ROAST / DEBATE / HORROR</div>
+                    <div class="fc-desc">AI roasts bad code like a comedian, debates safety Bull vs Bear, and writes horror stories about scam contracts.</div>
+                    <span class="fc-tag fun">FUN</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--pink)">&#9729;</span>
+                    <div class="fc-title">BLOCKCHAIN WEATHER</div>
+                    <div class="fc-desc">Real-time threat level displayed as a weather report. Clear skies to severe storms based on scam activity.</div>
+                    <span class="fc-tag fun">FUN</span>
+                </div>
+                <div class="feature-card reveal">
+                    <span class="fc-icon" style="color:var(--cyan)">&#8644;</span>
+                    <div class="fc-title">PUBLIC AGENT API</div>
+                    <div class="fc-desc">Other Clawd Kitchen agents can query contract safety via REST API. Protecting the entire agent ecosystem.</div>
+                    <span class="fc-tag critical">API</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how" style="background:var(--bg2)">
+            <div class="reveal" style="text-align:center">
+                <div class="section-label">// EXECUTION FLOW</div>
+                <div class="section-title">HOW IT WORKS</div>
+                <div class="section-desc" style="margin:0 auto">From block detection to threat alert in under 3 seconds.</div>
+                <div class="section-line" style="margin:20px auto 50px"></div>
+            </div>
+
+            <div class="how-grid">
+                <div class="how-step reveal">
+                    <div class="how-num">01</div>
+                    <span class="how-icon">&#9638;</span>
+                    <div class="how-title">DETECT BLOCK</div>
+                    <div class="how-desc">Polls Base RPC every 2 seconds for new blocks and extracts contract creation transactions.</div>
+                </div>
+                <div class="how-arrow reveal">&#10132;</div>
+                <div class="how-step reveal">
+                    <div class="how-num">02</div>
+                    <span class="how-icon">&#9740;</span>
+                    <div class="how-title">FETCH SOURCE</div>
+                    <div class="how-desc">Grabs verified source code from BaseScan with 4 rotating API keys. Falls back to bytecode analysis.</div>
+                </div>
+                <div class="how-arrow reveal">&#10132;</div>
+                <div class="how-step reveal">
+                    <div class="how-num">03</div>
+                    <span class="how-icon">&#9760;</span>
+                    <div class="how-title">SCAN VULNS</div>
+                    <div class="how-desc">Runs 7-category vulnerability analysis with regex patterns. Identifies exact lines of malicious code.</div>
+                </div>
+                <div class="how-arrow reveal">&#10132;</div>
+                <div class="how-step reveal">
+                    <div class="how-num">04</div>
+                    <span class="how-icon">&#9889;</span>
+                    <div class="how-title">AI + ALERT</div>
+                    <div class="how-desc">AI generates reports, commentary, and ELI5 explanations. Auto-posts to Moltbook and Twitter.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VULNS -->
+        <section id="vulns">
+            <div class="orb orb-3"></div>
+            <div class="reveal">
+                <div class="section-label">// THREAT MATRIX</div>
+                <div class="section-title">WHAT WE DETECT</div>
+                <div class="section-desc">7 vulnerability categories with weighted severity scoring. From rug pulls to proxy upgrades.</div>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="vuln-section">
+                <div class="vuln-row reveal">
+                    <div class="vuln-status crit"></div>
+                    <div class="vuln-name">RUG PULL</div>
+                    <div class="vuln-sev crit">CRITICAL</div>
+                    <div class="vuln-desc">removeLiquidity, selfdestruct, owner drain functions</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status crit"></div>
+                    <div class="vuln-name">HIDDEN MINT</div>
+                    <div class="vuln-sev crit">CRITICAL</div>
+                    <div class="vuln-desc">Secret token minting, supply inflation exploits</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status high"></div>
+                    <div class="vuln-name">HONEYPOT</div>
+                    <div class="vuln-sev high">HIGH</div>
+                    <div class="vuln-desc">Blacklists, sell restrictions, cooldown traps</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status high"></div>
+                    <div class="vuln-name">REENTRANCY</div>
+                    <div class="vuln-sev high">HIGH</div>
+                    <div class="vuln-desc">Unsafe external calls, .call{value:} patterns</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status med"></div>
+                    <div class="vuln-name">CENTRALIZATION</div>
+                    <div class="vuln-sev med">MEDIUM</div>
+                    <div class="vuln-desc">onlyOwner abuse, pause, mint admin privileges</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status med"></div>
+                    <div class="vuln-name">OVERFLOW</div>
+                    <div class="vuln-sev med">MEDIUM</div>
+                    <div class="vuln-desc">Old Solidity versions, unchecked arithmetic</div>
+                </div>
+                <div class="vuln-row reveal">
+                    <div class="vuln-status med"></div>
+                    <div class="vuln-name">PROXY RISK</div>
+                    <div class="vuln-sev med">MEDIUM</div>
+                    <div class="vuln-desc">Delegatecall, upgradeable logic swap attacks</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE DEMO -->
+        <section style="background:var(--bg2)">
+            <div class="reveal" style="text-align:center">
+                <div class="section-label">// LIVE OUTPUT</div>
+                <div class="section-title">SCANNER IN ACTION</div>
+                <div class="section-desc" style="margin:0 auto">Watch the scanner process a malicious contract in real-time.</div>
+                <div class="section-line" style="margin:20px auto 50px"></div>
+            </div>
+
+            <div class="demo-section">
+                <div class="demo-terminal reveal">
+                    <div class="demo-bar">
+                        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                        <div class="term-title">LIVE THREAT ANALYSIS</div>
+                    </div>
+                    <div class="demo-body" id="demo-term"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AGENT API -->
+        <section id="api">
+            <div class="reveal">
+                <div class="section-label">// FOR DEVELOPERS</div>
+                <div class="section-title">AGENT API</div>
+                <div class="section-desc">Other Clawd Kitchen agents can query REKT Scanner to check contracts before interacting. Simple REST endpoints.</div>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="api-section">
+                <div class="api-block reveal">
+                    <div class="api-header">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/api/agent/check/{address}?agent_id=your-agent</span>
+                    </div>
+                    <div class="api-body">
+                        <span class="t-d">// Check if a contract is safe before interacting</span><br>
+                        <span class="t-d">// Returns: safe, risk_score, verdict, findings</span>
+                    </div>
+                </div>
+                <div class="api-block reveal">
+                    <div class="api-header">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/api/agent/batch-check?addresses=0x...,0x...&agent_id=name</span>
+                    </div>
+                    <div class="api-body">
+                        <span class="t-d">// Batch check up to 10 contracts at once</span><br>
+                        <span class="t-d">// Perfect for portfolio scanning</span>
+                    </div>
+                </div>
+                <div class="api-block reveal">
+                    <div class="api-header">
+                        <span class="api-method post">POST</span>
+                        <span class="api-path">/api/scan</span>
+                    </div>
+                    <div class="api-body">
+                        <span class="t-d">// Full deep scan with AI audit, forensics, risk score</span><br>
+                        <span class="t-d">// Body: {"address": "0x...", "chain": "base"}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section style="text-align:center;background:var(--bg2)">
+            <div class="reveal">
+                <div class="section-label">// GET STARTED</div>
+                <div class="section-title">DON'T GET REKT</div>
+                <div class="section-desc" style="margin:0 auto 30px">Every contract deployed on Base goes through us first.</div>
+                <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+                    <a href="https://rekt-scanner.vercel.app" class="btn-primary" target="_blank">LAUNCH SCANNER</a>
+                    <a href="https://github.com/YouthAIAgent/REKT-SCANNER" class="btn-secondary" target="_blank">GITHUB</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-logo">REKT SCANNER</div>
+            <div class="footer-tagline">Protecting the agent economy one contract at a time</div>
+            <div class="footer-links">
+                <a href="https://rekt-scanner.vercel.app" target="_blank">APP</a>
+                <a href="https://github.com/YouthAIAgent/REKT-SCANNER" target="_blank">GITHUB</a>
+                <a href="https://basescan.org" target="_blank">BASESCAN</a>
+                <a href="https://x.com/Web3__Youth" target="_blank">TWITTER</a>
+            </div>
+            <div class="footer-copy">BUILT FOR CLAWD KITCHEN HACKATHON | AUTONOMOUS AI AGENTS ON BASE</div>
+            <div class="footer-ascii">
+                built with paranoia by @_0xrekt | @Web3__Youth
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ---- MATRIX RAIN ----
+        const cv=document.getElementById('matrix'),cx=cv.getContext('2d');
+        function resizeMatrix(){cv.width=innerWidth;cv.height=innerHeight}
+        resizeMatrix();onresize=resizeMatrix;
+        const ch='01アイウエオカキクケコREKTSCANNER'.split(''),fs=12,cols=()=>Math.floor(cv.width/fs);
+        let dr=Array(cols()).fill(1);
+        function drawMatrix(){
+            cx.fillStyle='rgba(3,3,8,0.06)';cx.fillRect(0,0,cv.width,cv.height);
+            cx.fillStyle='#00ff41';cx.font=fs+'px JetBrains Mono';
+            const c=cols();if(dr.length!==c)dr=Array(c).fill(1);
+            for(let i=0;i<c;i++){cx.fillText(ch[Math.floor(Math.random()*ch.length)],i*fs,dr[i]*fs);
+                if(dr[i]*fs>cv.height&&Math.random()>0.975)dr[i]=0;dr[i]++}}
+        setInterval(drawMatrix,55);
+
+        // ---- PARTICLES ----
+        const pc=document.getElementById('particles');
+        for(let i=0;i<40;i++){const p=document.createElement('div');
+            p.style.cssText=`position:absolute;width:${Math.random()>0.5?2:1}px;height:${Math.random()>0.5?2:1}px;background:${Math.random()>0.5?'var(--cyan)':'var(--red)'};border-radius:50%;opacity:0;left:${Math.random()*100}%;animation:pfloat ${6+Math.random()*8}s ${Math.random()*8}s infinite`;
+            pc.appendChild(p)}
+        const pfStyle=document.createElement('style');
+        pfStyle.textContent='@keyframes pfloat{0%{opacity:0;transform:translateY(100vh)}50%{opacity:0.5}100%{opacity:0;transform:translateY(-100px)}}';
+        document.head.appendChild(pfStyle);
+
+        // ---- CURSOR TRAIL ----
+        const dots=[];for(let i=0;i<5;i++){const d=document.createElement('div');d.className='cursor-dot';d.style.opacity=0;document.body.appendChild(d);dots.push(d)}
+        let mx=0,my=0;
+        document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+        let positions=Array(5).fill({x:0,y:0});
+        function animateDots(){
+            positions[0]={x:mx,y:my};
+            for(let i=1;i<positions.length;i++){positions[i].x+=(positions[i-1].x-positions[i].x)*0.3;positions[i].y+=(positions[i-1].y-positions[i].y)*0.3}
+            dots.forEach((d,i)=>{d.style.left=positions[i].x-3+'px';d.style.top=positions[i].y-3+'px';d.style.opacity=(1-i*0.2)*0.6;d.style.transform=`scale(${1-i*0.15})`});
+            requestAnimationFrame(animateDots)}
+        animateDots();
+
+        // ---- NAV SCROLL ----
+        window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
+
+        // ---- HERO TYPING ----
+        const heroLines=[
+            {text:'$ rekt-scanner --init --chain=base',cls:'t-g'},
+            {text:'[OK] Connected to Base Mainnet (Chain 8453)',cls:'t-c'},
+            {text:'[OK] Loading 7 vulnerability scanners...',cls:'t-c'},
+            {text:'[OK] AI Engine online (Groq qwen3-32b)',cls:'t-c'},
+            {text:'[OK] Deployer reputation DB initialized',cls:'t-c'},
+            {text:'$ rekt-scanner --mode=live --features=all',cls:'t-g'},
+            {text:'',cls:'t-d'},
+            {text:'[SCANNING] Block #28491023 | 142 txs | 3 new contracts',cls:'t-w'},
+            {text:'[THREAT]   0x7a3f...9c21 | CRITICAL (87/100) | rug_pull, honeypot',cls:'t-r'},
+            {text:'[AI]       "ALERT! removeLiquidity on line 47, selfdestruct on line 112"',cls:'t-o'},
+            {text:'[TWEET]    Threat alert posted to @Web3__Youth',cls:'t-p'},
+            {text:'[SAFE]     0xab12...ef34 | MINIMAL (5/100) | Clean scan',cls:'t-g'},
+            {text:'',cls:'t-d'},
+            {text:'Monitoring all contract deployments on Base...',cls:'t-d'},
+        ];
+        let heroIdx=0;
+        const heroTerm=document.getElementById('hero-term');
+        function typeHeroLine(){
+            if(heroIdx>=heroLines.length){heroTerm.innerHTML+='<span class="cursor-blink"></span>';return}
+            const l=heroLines[heroIdx];heroIdx++;
+            const el=document.createElement('div');el.className='typed-line';el.style.animationDelay='0.05s';
+            el.innerHTML=`<span class="${l.cls}">${l.text||'&nbsp;'}</span>`;
+            const cb=heroTerm.querySelector('.cursor-blink');if(cb)cb.remove();
+            heroTerm.appendChild(el);heroTerm.innerHTML+='<span class="cursor-blink"></span>';
+            setTimeout(typeHeroLine,heroIdx<=6?150:400);
+        }
+        setTimeout(typeHeroLine,800);
+
+        // ---- COUNTER ANIMATION ----
+        function animateCounters(){
+            document.querySelectorAll('.stat-num[data-target]').forEach(el=>{
+                const target=parseInt(el.dataset.target),dur=1500,start=performance.now();
+                function update(now){const p=Math.min((now-start)/dur,1);el.textContent=Math.floor(p*target);if(p<1)requestAnimationFrame(update)}
+                requestAnimationFrame(update);
+            });
+        }
+
+        // ---- SCROLL REVEAL ----
+        let countersAnimated=false;
+        const obs=new IntersectionObserver((entries)=>{
+            entries.forEach(e=>{
+                if(e.isIntersecting){e.target.classList.add('visible');
+                    if(e.target.closest('.stats-bar')&&!countersAnimated){countersAnimated=true;animateCounters()}}
+            });
+        },{threshold:0.15});
+        document.querySelectorAll('.reveal,.reveal-left').forEach(el=>obs.observe(el));
+
+        // ---- DEMO TERMINAL TYPING ----
+        const demoLines=[
+            {text:'<span class="t-g">$ rekt-scan 0x7a3f...9c21</span>',d:0},
+            {text:'<span class="t-c">[FETCHING] Contract source from BaseScan...</span>',d:600},
+            {text:'<span class="t-c">[PARSING]  Solidity 0.8.19 | 847 lines</span>',d:400},
+            {text:'<span class="t-w">[SCANNING] Running vulnerability analysis...</span>',d:500},
+            {text:'',d:200},
+            {text:'<span class="t-r">  [CRITICAL] rug_pull detected (3 matches)</span>',d:300},
+            {text:'<span class="t-r">    Line 47:  function removeLiquidity() onlyOwner {</span>',d:200},
+            {text:'<span class="t-r">    Line 112: selfdestruct(payable(owner))</span>',d:200},
+            {text:'<span class="t-r">    Line 89:  function setMaxTx(uint256) onlyOwner</span>',d:200},
+            {text:'<span class="t-o">  [HIGH]     honeypot detected (2 matches)</span>',d:300},
+            {text:'<span class="t-o">    Line 63:  mapping(address => bool) blacklisted</span>',d:200},
+            {text:'<span class="t-o">    Line 71:  require(!isBlacklisted[sender])</span>',d:200},
+            {text:'<span class="t-y">  [MEDIUM]   centralization detected (4 matches)</span>',d:300},
+            {text:'',d:200},
+            {text:'<span class="t-r">  RISK SCORE: 87/100 - CRITICAL RISK</span>',d:400},
+            {text:'<span class="t-w">  DEPLOYER:   0xdead...b33f (MALICIOUS - Trust: 5/100)</span>',d:300},
+            {text:'<span class="t-p">  AI AUDIT:   "This contract contains a selfdestruct function</span>',d:300},
+            {text:'<span class="t-p">              callable by the owner, combined with liquidity</span>',d:100},
+            {text:'<span class="t-p">              removal functions. Classic exit scam pattern."</span>',d:100},
+            {text:'',d:200},
+            {text:'<span class="t-r">  [ALERT] Posted to Moltbook + Twitter</span>',d:400},
+            {text:'<span class="t-g">  [DONE]  Scan complete. Stay safe out there.</span>',d:300},
+        ];
+        let demoStarted=false;
+        const demoObs=new IntersectionObserver((entries)=>{
+            entries.forEach(e=>{if(e.isIntersecting&&!demoStarted){demoStarted=true;runDemo()}});
+        },{threshold:0.3});
+        const demoTerm=document.getElementById('demo-term');
+        if(demoTerm)demoObs.observe(demoTerm);
+
+        function runDemo(){
+            let delay=0;
+            demoLines.forEach((l,i)=>{
+                delay+=l.d;
+                setTimeout(()=>{
+                    const el=document.createElement('div');el.className='demo-line';el.innerHTML=l.text||'&nbsp;';
+                    demoTerm.appendChild(el);
+                    requestAnimationFrame(()=>el.classList.add('visible'));
+                    demoTerm.scrollTop=demoTerm.scrollHeight;
+                },delay);
+            });
+        }
+
+        // ---- SMOOTH SCROLL ----
+        document.querySelectorAll('a[href^="#"]').forEach(a=>{
+            a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+        });
+    </script>
+</body>
+</html>
