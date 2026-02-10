@@ -343,6 +343,7 @@ GET /api/agent/batch-check?addresses=0x1234,0x5678&agent_id=your-agent
 
 <p align="center">
   <a href="https://rekt-scanner.vercel.app"><img src="https://img.shields.io/badge/LIVE_APP-rekt--scanner.vercel.app-ff0033?style=for-the-badge&labelColor=0a0a0a" /></a>
+  <a href="https://youthaiagent.github.io/REKT-SCANNER/"><img src="https://img.shields.io/badge/LANDING-GitHub_Pages-00ff41?style=for-the-badge&logo=github&labelColor=0a0a0a" /></a>
   <a href="https://basescan.org"><img src="https://img.shields.io/badge/BASE-basescan.org-0052FF?style=for-the-badge&logo=ethereum&labelColor=0a0a0a" /></a>
   <a href="https://x.com/Web3__Youth"><img src="https://img.shields.io/badge/TWITTER-@Web3__Youth-1DA1F2?style=for-the-badge&logo=x&labelColor=0a0a0a" /></a>
 </p>
