@@ -246,7 +246,8 @@ This agent operates fully autonomously:
 
 ## `> LINKS`
 
-- **Live Scanner**: `http://localhost:8888`
+- **Live Frontend**: [rekt-scanner.vercel.app](https://rekt-scanner.vercel.app)
+- **Local Scanner**: `http://localhost:8888`
 - **Base Chain**: [basescan.org](https://basescan.org)
 - **Clawd Kitchen**: [Hackathon](https://clawdkitchen.com)
 - **Twitter**: [@Web3__Youth](https://x.com/Web3__Youth)
