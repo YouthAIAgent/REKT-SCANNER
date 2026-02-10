@@ -438,13 +438,56 @@
         function termLoading(msg){termWrite(`<span class="t-info">${msg}</span>\n<span class="t-dim">Querying AI engine...</span>`)}
 
         // ---- WebSocket ----
+        const isVercel=location.hostname.includes('vercel.app');
+        let wsRetries=0,maxRetries=isVercel?2:Infinity;
+
         function connectWS(){
+            if(wsRetries>=maxRetries){showDemoMode();return}
             const p=location.protocol==='https:'?'wss:':'ws:';
             ws=new WebSocket(p+'//'+location.host+'/ws');
-            ws.onopen=()=>{document.getElementById('status-text').textContent='MONITORING';document.getElementById('status-dot').style.background='var(--green)'};
-            ws.onclose=()=>{document.getElementById('status-text').textContent='RECONNECTING';setTimeout(connectWS,3000)};
+            ws.onopen=()=>{wsRetries=0;document.getElementById('status-text').textContent='MONITORING';document.getElementById('status-dot').style.background='var(--green)'};
+            ws.onclose=()=>{wsRetries++;document.getElementById('status-text').textContent=wsRetries>=maxRetries?'DEMO MODE':'RECONNECTING';setTimeout(connectWS,3000)};
+            ws.onerror=()=>{};
             ws.onmessage=e=>{const d=JSON.parse(e.data);handleEvent(d)};
             setInterval(()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'ping'}))},30000);
+        }
+
+        function showDemoMode(){
+            document.getElementById('status-text').textContent='DEMO MODE';
+            document.getElementById('status-dot').style.background='var(--orange)';
+            document.getElementById('terminal').innerHTML=`
+<span class="t-warn">━━━ DEMO MODE ━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="t-info">REKT Scanner frontend is deployed on Vercel</span>
+<span class="t-info">but the backend needs to run locally.</span>
+
+<span class="t-prompt">$ HOW TO RUN:</span>
+<span class="t-white">  1. git clone https://github.com/YouthAIAgent/REKT-SCANNER.git</span>
+<span class="t-white">  2. cd REKT-SCANNER</span>
+<span class="t-white">  3. pip install fastapi uvicorn httpx pydantic python-dotenv</span>
+<span class="t-white">  4. cp .env.example .env  (add your API keys)</span>
+<span class="t-white">  5. python backend/scanner.py</span>
+<span class="t-white">  6. Open http://localhost:8888</span>
+
+<span class="t-dim">The full scanner with live monitoring, AI commentary,</span>
+<span class="t-dim">threat alerts, and all features runs at localhost:8888</span>
+
+<span class="t-prompt">$ FEATURES:</span>
+<span class="t-info">  Real-time Base monitoring | 7 vuln categories</span>
+<span class="t-info">  AI voice commentary | Code forensics</span>
+<span class="t-info">  Roast / Debate / Horror / Podcast</span>
+<span class="t-info">  Deployer reputation | Scam bingo</span>
+<span class="t-info">  Moltbook + Twitter auto-alerts</span>
+<span class="t-info">  Public Agent API for Clawd Kitchen</span>
+
+<span class="t-purple">Built for Clawd Kitchen Hackathon</span>
+<span class="t-purple">by @_0xrekt | @Web3__Youth</span>`;
+            // Show demo stats
+            document.getElementById('s-blocks').textContent='24/7';
+            document.getElementById('s-contracts').textContent='ALL';
+            document.getElementById('s-threats').textContent='LIVE';
+            document.getElementById('s-block').textContent='BASE';
+            document.getElementById('s-deployers').textContent='DB';
         }
 
         function handleEvent(d){
