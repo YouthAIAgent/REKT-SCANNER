@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REKT Scanner | Real-Time Base Security</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Orbitron:wght@400;700;900&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --red:#ff0033;--red-glow:rgba(255,0,51,0.4);--green:#00ff41;--green-glow:rgba(0,255,65,0.3);
+            --cyan:#00f0ff;--cyan-glow:rgba(0,240,255,0.3);--orange:#ff6600;--yellow:#ffcc00;
+            --purple:#bf5fff;--purple-glow:rgba(191,95,255,0.3);
+            --bg:#030308;--bg2:#080812;--bg3:#0d0d1a;--border:rgba(0,240,255,0.1);
+            --text:#c0c0d0;--dim:#3a3a5a;
+        }
+        body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+        .grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;
+            background-image:linear-gradient(rgba(0,240,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.03) 1px,transparent 1px);
+            background-size:60px 60px;animation:gridMove 20s linear infinite}
+        @keyframes gridMove{to{background-position:60px 60px}}
+        .particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
+        .particle{position:absolute;width:2px;height:2px;background:var(--cyan);border-radius:50%;opacity:0;animation:float 8s infinite}
+        @keyframes float{0%{opacity:0;transform:translateY(100vh)}50%{opacity:0.6}100%{opacity:0;transform:translateY(-100px)}}
+        #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.04;pointer-events:none}
+        .app{position:relative;z-index:1}
+        .scanline{position:fixed;top:0;left:0;width:100%;height:3px;
+            background:linear-gradient(90deg,transparent,var(--cyan),var(--green),var(--cyan),transparent);
+            opacity:0.15;z-index:50;animation:scanline 3s linear infinite;pointer-events:none;box-shadow:0 0 20px var(--cyan-glow)}
+        @keyframes scanline{from{top:-3px}to{top:100vh}}
+
+        /* Top Bar */
+        .topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;
+            background:rgba(3,3,8,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);
+            position:sticky;top:0;z-index:100}
+        .logo{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;
+            background:linear-gradient(135deg,var(--red),var(--orange),var(--red));
+            -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+            letter-spacing:6px;animation:logoPulse 3s ease-in-out infinite}
+        @keyframes logoPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+        .topbar-left{display:flex;align-items:center;gap:10px}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green-glow);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .status-text{font-size:9px;color:var(--green);letter-spacing:2px}
+        .tbtn{padding:4px 10px;border:1px solid var(--border);background:rgba(0,240,255,0.05);
+            color:var(--dim);font-family:'Orbitron',sans-serif;font-size:8px;border-radius:14px;
+            cursor:pointer;letter-spacing:1px;transition:all 0.3s;white-space:nowrap}
+        .tbtn.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);background:rgba(0,240,255,0.1)}
+        .tbtn.music-on{border-color:var(--purple);color:var(--purple);box-shadow:0 0 10px var(--purple-glow)}
+
+        /* Weather Widget */
+        .weather{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--border);border-radius:14px;
+            background:rgba(0,0,0,0.3);font-size:9px;cursor:pointer}
+        .weather-icon{font-size:14px}
+        .weather-text{color:var(--yellow);letter-spacing:1px;font-family:'Orbitron',sans-serif;font-size:8px}
+
+        .topbar-stats{display:flex;gap:14px}
+        .top-stat{text-align:center}
+        .top-stat-val{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--cyan)}
+        .top-stat-label{font-size:7px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+
+        /* Main Layout */
+        .main{display:grid;grid-template-columns:1fr 440px;gap:0;height:calc(100vh - 46px)}
+
+        /* Left: Live Feed */
+        .feed-panel{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;position:relative}
+        .panel-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+            align-items:center;background:rgba(8,8,18,0.8)}
+        .panel-title{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--dim);letter-spacing:3px}
+        .feed-scroll{flex:1;overflow-y:auto;padding:0}
+        .feed-scroll::-webkit-scrollbar{width:3px}
+        .feed-scroll::-webkit-scrollbar-thumb{background:var(--border)}
+
+        /* Contract Card */
+        .contract-card{padding:12px 16px;border-bottom:1px solid rgba(0,240,255,0.05);cursor:pointer;
+            transition:all 0.3s;animation:slideIn 0.4s ease-out;position:relative;overflow:hidden}
+        @keyframes slideIn{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}
+        .contract-card:hover{background:rgba(0,240,255,0.03)}
+        .contract-card.threat{border-left:3px solid var(--red);background:rgba(255,0,51,0.02)}
+        .contract-card.threat::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+            background:linear-gradient(90deg,rgba(255,0,51,0.05),transparent);pointer-events:none;animation:threatPulse 2s infinite}
+        @keyframes threatPulse{0%,100%{opacity:0.3}50%{opacity:0.8}}
+        .contract-card.safe{border-left:3px solid var(--green)}
+        .contract-card.warning{border-left:3px solid var(--orange)}
+        .cc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+        .cc-addr{font-size:11px;color:var(--cyan);font-weight:500}
+        .cc-risk{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px;font-family:'Orbitron',sans-serif}
+        .cc-risk.critical{background:rgba(255,0,51,0.15);color:var(--red);box-shadow:0 0 10px var(--red-glow)}
+        .cc-risk.high{background:rgba(255,102,0,0.15);color:var(--orange)}
+        .cc-risk.medium{background:rgba(255,204,0,0.1);color:var(--yellow)}
+        .cc-risk.low{background:rgba(0,255,65,0.08);color:var(--green)}
+        .cc-meta{display:flex;gap:10px;font-size:8px;color:var(--dim);margin-bottom:3px}
+        .cc-bytecode{font-size:8px;color:var(--green);opacity:0.3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+        .cc-commentary{margin-top:5px;padding:5px 8px;background:rgba(0,240,255,0.03);border-radius:4px;
+            border-left:2px solid var(--cyan);font-size:8px;color:var(--cyan);opacity:0.7;font-style:italic}
+        .cc-findings{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+        .cc-tag{font-size:7px;padding:2px 5px;border-radius:8px;letter-spacing:1px;text-transform:uppercase}
+        .cc-tag.CRITICAL{background:rgba(255,0,51,0.1);color:var(--red);border:1px solid rgba(255,0,51,0.2)}
+        .cc-tag.HIGH{background:rgba(255,102,0,0.1);color:var(--orange);border:1px solid rgba(255,102,0,0.2)}
+        .cc-tag.MEDIUM{background:rgba(255,204,0,0.08);color:var(--yellow);border:1px solid rgba(255,204,0,0.2)}
+        .block-ev{padding:4px 16px;border-bottom:1px solid rgba(0,240,255,0.02);font-size:8px;color:var(--dim);display:flex;justify-content:space-between}
+
+        /* Kill Feed Overlay */
+        .kill-feed{position:absolute;bottom:10px;left:10px;right:10px;z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:4px}
+        .kill-entry{padding:5px 10px;background:rgba(3,3,8,0.9);border:1px solid var(--red);border-radius:6px;
+            font-size:9px;animation:killSlide 0.3s ease-out;backdrop-filter:blur(10px)}
+        .kill-entry.safe{border-color:var(--green)}
+        @keyframes killSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .kill-entry .kill-icon{margin-right:6px}
+
+        /* Right Panel */
+        .right-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+        .search-sec{padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(8,8,18,0.8)}
+        .search-wrap{position:relative;margin-bottom:6px}
+        .search-input{width:100%;padding:9px 12px;padding-right:70px;background:var(--bg);
+            border:1px solid var(--border);border-radius:8px;color:#fff;font-family:'JetBrains Mono',monospace;
+            font-size:10px;outline:none;transition:all 0.3s}
+        .search-input:focus{border-color:var(--cyan);box-shadow:0 0 15px var(--cyan-glow)}
+        .search-input::placeholder{color:#222}
+        .btn-scan{position:absolute;right:3px;top:3px;bottom:3px;padding:0 14px;
+            background:linear-gradient(135deg,var(--red),#cc0000);border:none;border-radius:6px;
+            color:#fff;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;cursor:pointer}
+
+        /* Loss Calculator */
+        .loss-calc{display:flex;gap:6px;align-items:center}
+        .loss-input{width:80px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+            color:var(--yellow);font-family:'JetBrains Mono',monospace;font-size:9px;outline:none}
+        .loss-result{font-size:9px;color:var(--red);font-family:'Orbitron',sans-serif}
+
+        /* Tabs */
+        .tab-bar{display:flex;border-bottom:1px solid var(--border);background:rgba(3,3,8,0.8);overflow-x:auto}
+        .tab-bar::-webkit-scrollbar{height:0}
+        .tab{padding:7px 10px;font-size:7px;font-family:'Orbitron',sans-serif;letter-spacing:1px;color:var(--dim);
+            cursor:pointer;border-bottom:2px solid transparent;transition:all 0.3s;white-space:nowrap}
+        .tab:hover{color:var(--text)}
+        .tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+        .tab.active-red{color:var(--red);border-bottom-color:var(--red)}
+        .tab.active-purple{color:var(--purple);border-bottom-color:var(--purple)}
+        .tab.active-orange{color:var(--orange);border-bottom-color:var(--orange)}
+
+        /* Terminal */
+        .report-panel{flex:1;overflow-y:auto;padding:0;display:flex;flex-direction:column}
+        .report-panel::-webkit-scrollbar{width:3px}
+        .report-panel::-webkit-scrollbar-thumb{background:var(--border)}
+        .terminal{background:var(--bg);margin:8px;border-radius:10px;border:1px solid var(--border);
+            overflow:hidden;flex:1;display:flex;flex-direction:column}
+        .terminal-header{padding:8px 14px;background:rgba(0,240,255,0.03);border-bottom:1px solid var(--border);
+            display:flex;align-items:center;gap:6px}
+        .terminal-dot{width:9px;height:9px;border-radius:50%}
+        .terminal-dot.r{background:#ff3b30}.terminal-dot.y{background:#ffcc00}.terminal-dot.g{background:#00ff41}
+        .terminal-title{font-size:9px;color:var(--dim);letter-spacing:2px;margin-left:6px}
+        .terminal-body{padding:14px;flex:1;overflow-y:auto;font-size:10px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word}
+        .terminal-body::-webkit-scrollbar{width:3px}
+        .terminal-body::-webkit-scrollbar-thumb{background:var(--border)}
+        .t-prompt{color:var(--green)}.t-info{color:var(--cyan)}.t-warn{color:var(--orange)}
+        .t-danger{color:var(--red)}.t-dim{color:var(--dim)}.t-white{color:#e0e0e0}.t-purple{color:var(--purple)}
+
+        .code-block{margin:8px 0;padding:10px;background:rgba(0,0,0,0.4);border-radius:6px;
+            border:1px solid rgba(255,0,51,0.1);overflow-x:auto;font-size:9px;line-height:1.6;white-space:pre}
+        .code-line{display:flex;gap:10px}
+        .code-num{color:var(--dim);min-width:30px;text-align:right;user-select:none}
+        .code-text{color:var(--text)}
+        .code-text.danger{color:var(--red);font-weight:700;text-shadow:0 0 8px var(--red-glow);background:rgba(255,0,51,0.06);padding:0 3px;border-radius:2px}
+        .code-text.safe{color:var(--green);opacity:0.5}
+        .code-annotation{color:var(--orange);font-size:8px;font-style:italic;padding-left:4px;border-left:2px solid var(--red);background:rgba(255,0,51,0.03);padding:1px 6px}
+
+        /* Shame Cards */
+        .shame-card{padding:10px;margin:4px 0;background:rgba(255,0,51,0.03);border:1px solid rgba(255,0,51,0.1);border-radius:8px}
+        .shame-rank{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--red);margin-right:8px}
+        .shame-addr{font-size:10px;color:var(--cyan)}
+        .shame-stats{font-size:8px;color:var(--dim);margin-top:4px}
+        .shame-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:4px;overflow:hidden}
+        .shame-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--red));border-radius:2px}
+
+        /* Graveyard Tombstone */
+        .tombstone{padding:10px;margin:4px 0;background:rgba(100,100,100,0.05);border:1px solid rgba(100,100,100,0.2);
+            border-radius:8px;text-align:center;position:relative}
+        .tomb-rip{font-family:'Orbitron',sans-serif;font-size:14px;color:#666;margin-bottom:4px}
+        .tomb-name{font-size:10px;color:var(--dim)}
+        .tomb-score{font-size:9px;color:var(--red)}
+        .tomb-block{font-size:8px;color:var(--dim);margin-top:2px}
+
+        /* Bingo Overlay */
+        .bingo-overlay{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;
+            background:rgba(3,3,8,0.97);border:1px solid var(--cyan);border-radius:16px;padding:20px;
+            backdrop-filter:blur(20px);display:none;min-width:340px;box-shadow:0 0 40px var(--cyan-glow)}
+        .bingo-overlay.show{display:block;animation:bingoIn 0.3s ease-out}
+        @keyframes bingoIn{from{transform:translate(-50%,-50%) scale(0.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+        .bingo-title{font-family:'Orbitron',sans-serif;font-size:14px;color:var(--cyan);text-align:center;margin-bottom:12px;letter-spacing:4px}
+        .bingo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+        .bingo-sq{padding:8px 4px;text-align:center;font-size:7px;border:1px solid var(--border);border-radius:6px;
+            color:var(--dim);letter-spacing:1px;transition:all 0.3s}
+        .bingo-sq.found{background:rgba(0,255,65,0.1);border-color:var(--green);color:var(--green);font-weight:700}
+        .bingo-sq.free{background:rgba(0,240,255,0.1);border-color:var(--cyan);color:var(--cyan)}
+        .bingo-close{position:absolute;top:10px;right:14px;color:var(--dim);cursor:pointer;font-size:16px}
+        .bingo-status{text-align:center;margin-top:10px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px}
+
+        /* Debate */
+        .debate-box{padding:10px;margin:6px 0;border-radius:8px;border:1px solid var(--border)}
+        .debate-box.bull{border-color:rgba(0,255,65,0.3);background:rgba(0,255,65,0.03)}
+        .debate-box.bear{border-color:rgba(255,0,51,0.3);background:rgba(255,0,51,0.03)}
+        .debate-label{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;margin-bottom:4px}
+
+        /* Threat Alert Overlay */
+        .threat-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;pointer-events:none;
+            display:none;animation:redFlash 0.5s ease-in-out 3}
+        .threat-overlay.active{display:block}
+        @keyframes redFlash{0%,100%{background:transparent}50%{background:rgba(255,0,51,0.08)}}
+        .threat-alert{position:fixed;top:55px;right:16px;padding:12px 16px;
+            background:rgba(3,3,8,0.95);border:1px solid var(--red);border-radius:10px;
+            backdrop-filter:blur(20px);z-index:201;max-width:360px;
+            animation:alertSlide 0.4s ease-out;box-shadow:0 0 30px var(--red-glow)}
+        @keyframes alertSlide{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+        .alert-title{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--red);letter-spacing:3px;margin-bottom:4px;animation:alertBlink 0.5s infinite}
+        @keyframes alertBlink{0%,100%{opacity:1}50%{opacity:0.5}}
+        .alert-addr{font-size:9px;color:var(--cyan);margin-bottom:3px}
+        .alert-info{font-size:8px;color:var(--dim)}
+        @keyframes glitch{0%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(2px,-2px)}60%{transform:translate(-1px,-1px)}80%{transform:translate(1px,1px)}100%{transform:translate(0)}}
+
+        @media(max-width:900px){.main{grid-template-columns:1fr;height:auto}.right-panel{height:70vh}.topbar-stats{display:none}.weather{display:none}}
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="particles" id="particles"></div>
+    <canvas id="matrix"></canvas>
+    <div class="scanline"></div>
+    <div class="threat-overlay" id="threat-overlay"></div>
+
+    <div class="app">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="logo">REKT</div>
+                <div class="status-dot" id="status-dot"></div>
+                <div class="status-text" id="status-text">CONNECTING...</div>
+                <button class="tbtn" id="voice-btn" onclick="toggleVoice()">VOICE</button>
+                <button class="tbtn" id="music-btn" onclick="toggleMusic()">MUSIC</button>
+                <button class="tbtn" onclick="toggleBingo()">BINGO</button>
+                <div class="weather" id="weather-w" onclick="loadWeather()" title="Click to refresh">
+                    <span class="weather-icon" id="w-icon">...</span>
+                    <span class="weather-text" id="w-text">LOADING</span>
+                </div>
+            </div>
+            <div class="topbar-stats">
+                <div class="top-stat"><div class="top-stat-val" id="s-blocks">0</div><div class="top-stat-label">Blocks</div></div>
+                <div class="top-stat"><div class="top-stat-val" id="s-contracts">0</div><div class="top-stat-label">Contracts</div></div>
+                <div class="top-stat"><div class="top-stat-val" id="s-threats">0</div><div class="top-stat-label">Threats</div></div>
+                <div class="top-stat"><div class="top-stat-val" id="s-block">-</div><div class="top-stat-label">Block</div></div>
+                <div class="top-stat"><div class="top-stat-val" id="s-deployers">0</div><div class="top-stat-label">Deployers</div></div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="feed-panel">
+                <div class="panel-header">
+                    <div class="panel-title">LIVE FEED - BASE MAINNET</div>
+                    <div style="font-size:8px;color:var(--dim)" id="feed-count">0 scanned</div>
+                </div>
+                <div class="feed-scroll" id="feed"></div>
+                <div class="kill-feed" id="kill-feed"></div>
+            </div>
+
+            <div class="right-panel">
+                <div class="search-sec">
+                    <div class="search-wrap">
+                        <input class="search-input" id="addr-input" placeholder="0x... scan any contract" spellcheck="false">
+                        <button class="btn-scan" id="scan-btn" onclick="manualScan()">SCAN</button>
+                    </div>
+                    <div class="loss-calc">
+                        <span style="font-size:8px;color:var(--dim)">IF YOU INVEST $</span>
+                        <input class="loss-input" id="loss-amt" type="number" value="100" min="1">
+                        <span class="loss-result" id="loss-result">-</span>
+                    </div>
+                </div>
+
+                <div class="tab-bar">
+                    <div class="tab active" data-tab="report" onclick="switchTab('report',this)">REPORT</div>
+                    <div class="tab" data-tab="roast" onclick="switchTab('roast',this)">ROAST</div>
+                    <div class="tab" data-tab="debate" onclick="switchTab('debate',this)">DEBATE</div>
+                    <div class="tab" data-tab="horror" onclick="switchTab('horror',this)">HORROR</div>
+                    <div class="tab" data-tab="shame" onclick="switchTab('shame',this)">SHAME</div>
+                    <div class="tab" data-tab="graveyard" onclick="switchTab('graveyard',this)">GRAVEYARD</div>
+                    <div class="tab" data-tab="digest" onclick="switchTab('digest',this)">PODCAST</div>
+                </div>
+
+                <div class="report-panel" id="report-panel">
+                    <div class="terminal">
+                        <div class="terminal-header">
+                            <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+                            <div class="terminal-title" id="term-title">REKT SCANNER v5.0</div>
+                        </div>
+                        <div class="terminal-body" id="terminal">
+<span class="t-prompt">$ rekt-scanner --init</span>
+<span class="t-info">Connecting to Base Mainnet...</span>
+<span class="t-info">Loading 7 vulnerability categories...</span>
+<span class="t-info">Starting AI engines (Roast/Debate/Horror)...</span>
+<span class="t-prompt">$ rekt-scanner --mode=live --features=all</span>
+<span class="t-dim">Waiting for contract deployments...</span>
+<span class="t-dim">High-risk contracts trigger full report.</span>
+<span class="t-dim"></span>
+<span class="t-info">TABS: Report | Roast | Debate | Horror | Shame | Graveyard | Podcast</span>
+<span class="t-dim">Click any tab for different AI analysis modes.</span>
+<span class="t-dim">Scan a contract address to activate features.</span>
+<span class="t-dim"></span>
+<span class="t-purple">Built for Clawd Kitchen Hackathon</span>
+<span class="t-purple">by @_0xrekt | @Web3__Youth</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <!-- Bingo Overlay -->
+    <div class="bingo-overlay" id="bingo-overlay">
+        <span class="bingo-close" onclick="toggleBingo()">&times;</span>
+        <div class="bingo-title">SCAM BINGO</div>
+        <div class="bingo-grid" id="bingo-grid"></div>
+        <div class="bingo-status" id="bingo-status">Loading...</div>
+    </div>
+
+    <script>
+        let ws=null,feedCount=0,voiceEnabled=false,musicEnabled=false,speechQueue=[],isSpeaking=false,audioCtx=null;
+        let currentTab='report',lastAddr='',lastScanData=null,musicNodes=[];
+
+        // ---- Particles ----
+        const pC=document.getElementById('particles');
+        for(let i=0;i<30;i++){const p=document.createElement('div');p.className='particle';
+            p.style.left=Math.random()*100+'%';p.style.animationDelay=Math.random()*8+'s';
+            p.style.animationDuration=(6+Math.random()*6)+'s';pC.appendChild(p)}
+
+        // ---- Matrix ----
+        const cv=document.getElementById('matrix'),cx=cv.getContext('2d');
+        cv.width=innerWidth;cv.height=innerHeight;
+        const ch='0123456789abcdef'.split(''),fs=11,cols=cv.width/fs,dr=Array(Math.floor(cols)).fill(1);
+        function drawMatrix(){cx.fillStyle='rgba(3,3,8,0.05)';cx.fillRect(0,0,cv.width,cv.height);
+            cx.fillStyle='#00ff41';cx.font=fs+'px JetBrains Mono';
+            for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.floor(Math.random()*ch.length)],i*fs,dr[i]*fs);
+                if(dr[i]*fs>cv.height&&Math.random()>0.975)dr[i]=0;dr[i]++}}
+        setInterval(drawMatrix,60);
+        onresize=()=>{cv.width=innerWidth;cv.height=innerHeight};
+
+        // ---- Audio Context ----
+        function ensureAudio(){if(!audioCtx)audioCtx=new(AudioContext||webkitAudioContext)();return audioCtx}
+
+        // ---- Siren ----
+        function playSiren(dur=4){
+            const ctx=ensureAudio();
+            const o=ctx.createOscillator(),g=ctx.createGain(),o2=ctx.createOscillator(),g2=ctx.createGain();
+            o.connect(g);g.connect(ctx.destination);o2.connect(g2);g2.connect(ctx.destination);
+            o.type='sawtooth';o2.type='square';g.gain.value=0.8;g2.gain.value=0.4;
+            const t=ctx.currentTime;
+            for(let i=0;i<dur*2;i++){
+                o.frequency.linearRampToValueAtTime(900,t+i*0.5);o.frequency.linearRampToValueAtTime(400,t+i*0.5+0.25);
+                o2.frequency.linearRampToValueAtTime(600,t+i*0.5);o2.frequency.linearRampToValueAtTime(300,t+i*0.5+0.25);
+            }
+            o.start(t);o.stop(t+dur);o2.start(t);o2.stop(t+dur);
+            g.gain.linearRampToValueAtTime(0,t+dur);g2.gain.linearRampToValueAtTime(0,t+dur);
+        }
+
+        // ---- Ambient Music Engine ----
+        function toggleMusic(){
+            musicEnabled=!musicEnabled;
+            document.getElementById('music-btn').classList.toggle('music-on',musicEnabled);
+            document.getElementById('music-btn').textContent=musicEnabled?'MUSIC ON':'MUSIC';
+            if(musicEnabled){ensureAudio();startAmbient()}else{stopAmbient()}
+        }
+        function startAmbient(){
+            const ctx=audioCtx;if(!ctx)return;
+            // Deep bass drone
+            const o1=ctx.createOscillator(),g1=ctx.createGain();
+            o1.type='sine';o1.frequency.value=55;g1.gain.value=0.06;o1.connect(g1);g1.connect(ctx.destination);o1.start();
+            // High pad
+            const o2=ctx.createOscillator(),g2=ctx.createGain();
+            o2.type='sine';o2.frequency.value=220;g2.gain.value=0.02;o2.connect(g2);g2.connect(ctx.destination);o2.start();
+            // LFO modulation
+            const lfo=ctx.createOscillator(),lfoG=ctx.createGain();
+            lfo.type='sine';lfo.frequency.value=0.1;lfoG.gain.value=10;lfo.connect(lfoG);lfoG.connect(o2.frequency);lfo.start();
+            musicNodes=[o1,g1,o2,g2,lfo,lfoG];
+        }
+        function stopAmbient(){musicNodes.forEach(n=>{try{n.stop?.()}catch(e){}try{n.disconnect()}catch(e){}});musicNodes=[]}
+        // Threat music burst
+        function playThreatBurst(){
+            if(!musicEnabled)return;const ctx=audioCtx;if(!ctx)return;
+            const o=ctx.createOscillator(),g=ctx.createGain();
+            o.type='sawtooth';o.frequency.value=80;g.gain.value=0.15;
+            o.connect(g);g.connect(ctx.destination);
+            const t=ctx.currentTime;
+            o.frequency.linearRampToValueAtTime(40,t+2);g.gain.linearRampToValueAtTime(0,t+2);
+            o.start(t);o.stop(t+2);
+        }
+
+        // ---- Voice ----
+        function toggleVoice(){
+            voiceEnabled=!voiceEnabled;const b=document.getElementById('voice-btn');
+            b.textContent=voiceEnabled?'VOICE ON':'VOICE';b.classList.toggle('active',voiceEnabled);
+            if(voiceEnabled){ensureAudio();speak("REKT Scanner voice mode activated. All high risk contracts will be narrated.")}
+        }
+        function speak(text,rate=0.9,pitch=0.8){if(!voiceEnabled||!speechSynthesis)return;speechQueue.push({text,rate,pitch});processQ()}
+        function processQ(){
+            if(isSpeaking||speechQueue.length===0)return;isSpeaking=true;
+            const{text,rate,pitch}=speechQueue.shift(),u=new SpeechSynthesisUtterance(text);
+            u.rate=rate;u.pitch=pitch;u.volume=1;
+            const v=speechSynthesis.getVoices();
+            const pref=v.find(x=>x.name.includes('Google')&&x.lang.startsWith('en'))||v.find(x=>x.lang.startsWith('en'));
+            if(pref)u.voice=pref;
+            u.onend=()=>{isSpeaking=false;processQ()};u.onerror=()=>{isSpeaking=false;processQ()};
+            speechSynthesis.speak(u);
+        }
+        speechSynthesis.onvoiceschanged=()=>{};
+
+        // ---- Tab System ----
+        function switchTab(tab,el){
+            currentTab=tab;
+            document.querySelectorAll('.tab').forEach(t=>t.className='tab');
+            const colorMap={report:'active',roast:'active-red',debate:'active-purple',horror:'active-orange',
+                shame:'active-red',graveyard:'active',digest:'active-purple'};
+            el.classList.add('tab');el.classList.add(colorMap[tab]||'active');
+
+            const titles={report:'THREAT REPORT',roast:'ROAST MY CONTRACT',debate:'AI vs AI DEBATE',
+                horror:'HORROR STORY',shame:'HALL OF SHAME',graveyard:'CONTRACT GRAVEYARD',digest:'REKT DAILY PODCAST'};
+            document.getElementById('term-title').textContent=titles[tab]||'REKT SCANNER v5.0';
+
+            if(tab==='shame')loadShame();
+            else if(tab==='graveyard')loadGraveyard();
+            else if(tab==='digest')loadDigest();
+            else if(lastAddr&&tab!=='report'){
+                if(tab==='roast')loadRoast(lastAddr);
+                else if(tab==='debate')loadDebate(lastAddr);
+                else if(tab==='horror')loadHorror(lastAddr);
+            }else if(!lastAddr&&['roast','debate','horror'].includes(tab)){
+                termWrite(`<span class="t-dim">Scan a contract first, then switch tabs.</span>\n<span class="t-dim">Or click any contract in the live feed.</span>`);
+            }
+        }
+        function termWrite(html){document.getElementById('terminal').innerHTML=html}
+        function termLoading(msg){termWrite(`<span class="t-info">${msg}</span>\n<span class="t-dim">Querying AI engine...</span>`)}
+
+        // ---- WebSocket ----
+        function connectWS(){
+            const p=location.protocol==='https:'?'wss:':'ws:';
+            ws=new WebSocket(p+'//'+location.host+'/ws');
+            ws.onopen=()=>{document.getElementById('status-text').textContent='MONITORING';document.getElementById('status-dot').style.background='var(--green)'};
+            ws.onclose=()=>{document.getElementById('status-text').textContent='RECONNECTING';setTimeout(connectWS,3000)};
+            ws.onmessage=e=>{const d=JSON.parse(e.data);handleEvent(d)};
+            setInterval(()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'ping'}))},30000);
+        }
+
+        function handleEvent(d){
+            if(d.type==='init'){updateStats(d.stats);if(d.recent)d.recent.reverse().forEach(c=>addCard(c))}
+            if(d.type==='new_block'){updateStats(d.stats);addBlock(d)}
+            if(d.type==='new_contract'){
+                addCard(d);addKillEntry(d);updateLoss(d);
+                const score=d.risk?.score||0;
+                if(score>=50){
+                    showThreatAlert(d);
+                    if(currentTab==='report')renderThreatReport(d);
+                    lastAddr=d.address;lastScanData=d;
+                    if(voiceEnabled){
+                        playSiren(score>=70?5:3);
+                        document.getElementById('threat-overlay').classList.add('active');
+                        setTimeout(()=>document.getElementById('threat-overlay').classList.remove('active'),3000);
+                        setTimeout(()=>{if(d.commentary)speak(d.commentary,0.8,0.6)},score>=70?5000:3000);
+                    }
+                    if(musicEnabled)playThreatBurst();
+                }
+            }
+        }
+
+        function updateStats(s){
+            if(!s)return;
+            document.getElementById('s-blocks').textContent=s.blocks_scanned?.toLocaleString()||'0';
+            document.getElementById('s-contracts').textContent=s.contracts_found?.toLocaleString()||'0';
+            document.getElementById('s-threats').textContent=s.threats_detected?.toLocaleString()||'0';
+            document.getElementById('s-block').textContent=s.last_block?.toLocaleString()||'-';
+            document.getElementById('s-deployers').textContent=s.deployers_tracked?.toLocaleString()||'0';
+        }
+
+        // ---- Kill Feed (Gaming Style) ----
+        function addKillEntry(c){
+            const kf=document.getElementById('kill-feed'),score=c.risk?.score||0;
+            const el=document.createElement('div');
+            if(score>=50){
+                el.className='kill-entry';
+                el.innerHTML=`<span class="kill-icon" style="color:var(--red)">X</span> REKT <span style="color:var(--cyan)">${c.address?.slice(0,8)}...</span> <span style="color:var(--red)">[${score}]</span> ${c.findings?.map(f=>f.type.replace('_',' ')).join(', ')||''}`;
+            }else{
+                el.className='kill-entry safe';
+                el.innerHTML=`<span class="kill-icon" style="color:var(--green)">~</span> CLEAR <span style="color:var(--cyan)">${c.address?.slice(0,8)}...</span> <span style="color:var(--green)">[${score}]</span>`;
+            }
+            kf.appendChild(el);setTimeout(()=>el.remove(),6000);
+            while(kf.children.length>5)kf.removeChild(kf.firstChild);
+        }
+
+        // ---- Loss Calculator ----
+        function updateLoss(c){
+            const amt=parseFloat(document.getElementById('loss-amt').value)||100;
+            const score=c?.risk?.score||lastScanData?.risk?.score||0;
+            if(score>=70)document.getElementById('loss-result').innerHTML=`YOU LOSE $${amt} (${score}% chance)`;
+            else if(score>=50)document.getElementById('loss-result').innerHTML=`RISKY - ~$${Math.round(amt*score/100)} at risk`;
+            else document.getElementById('loss-result').innerHTML=`<span style="color:var(--green)">Probably safe</span>`;
+        }
+        document.getElementById('loss-amt')?.addEventListener('input',()=>updateLoss(lastScanData));
+
+        function addBlock(d){
+            if(d.contract_deploys===0&&feedCount>3)return;
+            const f=document.getElementById('feed'),el=document.createElement('div');el.className='block-ev';
+            el.innerHTML=`<span>#${d.block} | ${d.tx_count} txs | ${d.contract_deploys} deploys</span><span>${new Date(d.timestamp).toLocaleTimeString()}</span>`;
+            f.insertBefore(el,f.firstChild);while(f.children.length>300)f.removeChild(f.lastChild);
+        }
+
+        function addCard(c){
+            const f=document.getElementById('feed'),score=c.risk?.score||0;
+            const rc=score>=70?'critical':score>=50?'high':score>=30?'medium':'low';
+            const cc=score>=50?'threat':score>=30?'warning':'safe';
+            const el=document.createElement('div');el.className=`contract-card ${cc}`;
+            el.onclick=()=>{document.getElementById('addr-input').value=c.address;lastAddr=c.address;lastScanData=c;manualScan()};
+            let tags='';
+            if(c.findings?.length>0)tags='<div class="cc-findings">'+c.findings.map(f=>`<span class="cc-tag ${f.severity}">${f.type.replace('_',' ')}</span>`).join('')+'</div>';
+            const repColor=c.deployer_reputation==='MALICIOUS'?'var(--red)':c.deployer_reputation==='SUSPICIOUS'?'var(--orange)':c.deployer_reputation==='TRUSTED'?'var(--green)':'var(--dim)';
+            el.innerHTML=`
+                <div class="cc-top"><span class="cc-addr">${c.address?.slice(0,10)}...${c.address?.slice(-6)||''}</span><span class="cc-risk ${rc}">${c.risk?.rating||'?'}</span></div>
+                <div class="cc-meta"><span>#${c.block||'-'}</span><span>${c.contract_name||'Unknown'}</span><span>${c.is_verified?'V':'U'}</span><span style="color:${repColor}">${c.deployer_reputation||'?'}</span></div>
+                ${tags}
+                ${(score>=50&&c.commentary)?`<div class="cc-commentary">${c.commentary}</div>`:''}`;
+            f.insertBefore(el,f.firstChild);feedCount++;
+            document.getElementById('feed-count').textContent=feedCount+' scanned';
+            while(f.children.length>300)f.removeChild(f.lastChild);
+            if(score>=70)el.style.animation='slideIn 0.4s ease-out, glitch 0.3s ease-in-out 0.5s';
+        }
+
+        function showThreatAlert(c){
+            const ct=document.getElementById('alert-container'),el=document.createElement('div');
+            el.className='threat-alert';
+            el.innerHTML=`<div class="alert-title">THREAT DETECTED</div><div class="alert-addr">${c.address}</div>
+                <div class="alert-info">Risk: ${c.risk?.score}/100 | ${c.findings?.map(f=>f.type.replace('_',' ')).join(', ')||''}</div>`;
+            ct.appendChild(el);setTimeout(()=>el.remove(),8000);
+        }
+
+        // ---- Terminal: Threat Report ----
+        function renderThreatReport(c){
+            const t=document.getElementById('terminal');
+            const dangerLines={};
+            if(c.findings){for(const f of c.findings){if(f.forensics){for(const fl of f.forensics){
+                dangerLines[fl.line]={type:f.type.replace('_',' ').toUpperCase(),severity:f.severity,desc:f.description}}}}}
+
+            let h=`<span class="t-danger">━━━━ THREAT REPORT ━━━━━━━━━━━━━━━</span>\n`;
+            h+=`<span class="t-prompt">$ contract</span> <span class="t-info">${c.address}</span>\n`;
+            h+=`<span class="t-prompt">$ deployer</span> <span class="t-info">${c.deployer||'?'}</span>\n`;
+            h+=`<span class="t-prompt">$ block</span> <span class="t-white">${c.block||'?'}</span>  <span class="t-prompt">name</span> <span class="t-white">${c.contract_name||'Unknown'}</span>\n`;
+            h+=`<span class="t-prompt">$ risk</span> <span class="t-danger">${c.risk?.score}/100 - ${c.risk?.rating}</span>  <span class="t-prompt">verified</span> <span class="${c.is_verified?'t-info':'t-warn'}">${c.is_verified?'YES':'NO'}</span>\n`;
+            h+=`<span class="t-prompt">$ deployer_rep</span> <span class="t-warn">${c.deployer_reputation||'?'} (Trust: ${c.deployer_trust||'?'})</span>\n\n`;
+
+            if(c.source_code){
+                h+=`<span class="t-prompt">$ cat contract.sol</span>\n<span class="t-danger">━━━ SOURCE CODE ━━━</span>\n\n<div class="code-block">`;
+                const lines=c.source_code.split('\n'),dNums=Object.keys(dangerLines).map(Number);
+                for(let i=0;i<lines.length;i++){
+                    const ln=i+1,isDanger=dangerLines[ln],lt=esc(lines[i]);
+                    if(isDanger){
+                        h+=`<div class="code-line"><span class="code-num" style="color:var(--red)">${ln}</span><span class="code-text danger">${lt}</span></div>`;
+                        h+=`<div class="code-line"><span class="code-num"></span><span class="code-annotation">^^^ [${isDanger.severity}] ${isDanger.type}</span></div>`;
+                    }else{
+                        const near=dNums.some(d=>Math.abs(d-ln)<=3);
+                        if(near||lines.length<=80)h+=`<div class="code-line"><span class="code-num">${ln}</span><span class="code-text${near?' safe':''}">${lt}</span></div>`;
+                        else{const nx=dNums.find(d=>d>ln);if(nx&&nx-ln>7){h+=`<div class="code-line"><span class="code-num" style="color:var(--dim)">...</span><span class="code-text" style="color:var(--dim);font-style:italic"> [${nx-ln-6} lines]</span></div>`;i=nx-4}}
+                    }
+                }
+                h+=`</div>\n`;
+            }else{
+                h+=`<span class="t-warn">$ Source UNVERIFIED - code hidden</span>\n`;
+                if(c.bytecode_preview)h+=`<div class="code-block"><div class="code-line"><span class="code-num">0x</span><span class="code-text" style="color:var(--orange);word-break:break-all">${esc(c.bytecode_preview)}</span></div></div>\n`;
+            }
+            if(c.findings?.length>0){h+=`\n<span class="t-danger">━━━ VULNERABILITIES ━━━</span>\n`;
+                for(const f of c.findings)h+=`<span class="${f.severity==='CRITICAL'?'t-danger':'t-warn'}">  [${f.severity}] ${f.type.replace('_',' ').toUpperCase()} (${f.count}x)</span>\n`}
+            if(c.ai_audit)h+=`\n<span class="t-info">━━━ AI AUDIT ━━━</span>\n<span class="t-white">${esc(c.ai_audit)}</span>\n`;
+            if(c.eli5_report)h+=`\n<span class="t-info">━━━ EXPLAINED SIMPLY ━━━</span>\n<span class="t-white">${esc(c.eli5_report)}</span>\n`;
+            h+=`\n<span class="t-prompt">$ basescan</span> <span class="t-info">https://basescan.org/address/${c.address}</span>\n`;
+            t.innerHTML=h;t.scrollTop=0;fadeIn(t);
+        }
+
+        // ---- Tab: Roast ----
+        async function loadRoast(addr){
+            termLoading(`Roasting ${addr.slice(0,10)}...`);
+            try{const r=await(await fetch(`/api/roast/${addr}`)).json();
+                let h=`<span class="t-danger">━━━━ ROAST MY CONTRACT ━━━━━━━━━━</span>\n\n`;
+                h+=`<span class="t-prompt">$ roast</span> <span class="t-info">${addr}</span>\n`;
+                h+=`<span class="t-dim">${r.contract_name||'Unknown'} | Risk: ${r.risk?.score||'?'}</span>\n\n`;
+                h+=`<span class="t-white" style="font-size:12px;line-height:2">${esc(r.roast)}</span>\n`;
+                h+=`\n<span class="t-danger">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`;
+                termWrite(h);
+                if(voiceEnabled)speak(r.roast,1.0,1.0);
+            }catch(e){termWrite(`<span class="t-danger">Roast failed: ${e.message}</span>`)}
+        }
+
+        // ---- Tab: Debate ----
+        async function loadDebate(addr){
+            termLoading(`Starting AI debate on ${addr.slice(0,10)}...`);
+            try{const r=await(await fetch(`/api/debate/${addr}`)).json();
+                let h=`<span class="t-purple">━━━━ AI vs AI DEBATE ━━━━━━━━━━━━</span>\n\n`;
+                h+=`<span class="t-prompt">$ debate</span> <span class="t-info">${addr}</span>\n`;
+                h+=`<span class="t-dim">Risk: ${r.risk?.score||'?'}/100</span>\n\n`;
+                h+=`<span class="t-info">BULL (Optimist):</span>\n<span class="t-white">${esc(r.debate?.bull)}</span>\n\n`;
+                h+=`<span class="t-danger">BEAR (Paranoid):</span>\n<span class="t-white">${esc(r.debate?.bear)}</span>\n\n`;
+                h+=`<span class="t-purple">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`;
+                termWrite(h);
+                if(voiceEnabled){speak("The bull says: "+r.debate?.bull,1.0,1.2);speak("The bear responds: "+r.debate?.bear,0.85,0.5)}
+            }catch(e){termWrite(`<span class="t-danger">Debate failed: ${e.message}</span>`)}
+        }
+
+        // ---- Tab: Horror ----
+        async function loadHorror(addr){
+            termLoading(`Generating horror story for ${addr.slice(0,10)}...`);
+            try{const r=await(await fetch(`/api/horror/${addr}`)).json();
+                let h=`<span class="t-warn">━━━━ HORROR STORY ━━━━━━━━━━━━━━━</span>\n\n`;
+                h+=`<span class="t-prompt">$ horror</span> <span class="t-info">${addr}</span>\n\n`;
+                h+=`<span class="t-white" style="font-size:11px;line-height:2.0">${esc(r.story)}</span>\n\n`;
+                h+=`<span class="t-warn">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`;
+                termWrite(h);
+                if(voiceEnabled)speak(r.story,0.75,0.4);
+            }catch(e){termWrite(`<span class="t-danger">Horror failed: ${e.message}</span>`)}
+        }
+
+        // ---- Tab: Hall of Shame ----
+        async function loadShame(){
+            termLoading('Loading Hall of Shame...');
+            try{const r=await(await fetch('/api/hall-of-shame?limit=15')).json();
+                if(!r.shame?.length){termWrite(`<span class="t-dim">No scammers caught yet. Keep scanning...</span>`);return}
+                let h=`<span class="t-danger">━━━━ HALL OF SHAME ━━━━━━━━━━━━━━</span>\n`;
+                h+=`<span class="t-dim">Top ${r.shame.length} worst deployers on Base</span>\n\n`;
+                r.shame.forEach((d,i)=>{
+                    const pct=Math.round((d.threats_deployed/Math.max(d.contracts_deployed,1))*100);
+                    h+=`<span class="t-danger">#${i+1}</span> <span class="t-info">${d.address.slice(0,14)}...${d.address.slice(-6)}</span>\n`;
+                    h+=`   <span class="t-dim">Contracts: ${d.contracts_deployed} | Threats: </span><span class="t-danger">${d.threats_deployed}</span><span class="t-dim"> | Trust: ${d.trust_score} | ${d.reputation}</span>\n`;
+                    h+=`   <span class="t-danger">${'█'.repeat(Math.round(pct/5))}</span><span class="t-dim">${'░'.repeat(20-Math.round(pct/5))}</span> <span class="t-warn">${pct}% scam rate</span>\n\n`;
+                });
+                termWrite(h);
+            }catch(e){termWrite(`<span class="t-danger">Error: ${e.message}</span>`)}
+        }
+
+        // ---- Tab: Graveyard ----
+        async function loadGraveyard(){
+            termLoading('Digging up the graveyard...');
+            try{const r=await(await fetch('/api/graveyard')).json();
+                if(!r.tombstones?.length){termWrite(`<span class="t-dim">Graveyard empty. No dead contracts yet...</span>`);return}
+                let h=`<span class="t-dim">━━━━ CONTRACT GRAVEYARD ━━━━━━━━━━</span>\n`;
+                h+=`<span class="t-dim">${r.total_dead} contracts rest here</span>\n\n`;
+                r.tombstones.forEach(c=>{
+                    h+=`<span class="t-dim">       ___________</span>\n`;
+                    h+=`<span class="t-dim">      |           |</span>\n`;
+                    h+=`<span class="t-dim">      |   </span><span class="t-danger"> R.I.P </span><span class="t-dim">  |</span>\n`;
+                    h+=`<span class="t-dim">      |</span> <span class="t-info">${(c.address||'').slice(0,9)}</span><span class="t-dim">|</span>\n`;
+                    h+=`<span class="t-dim">      | </span><span class="t-warn">Score ${c.risk?.score||'?'}</span><span class="t-dim">  |</span>\n`;
+                    h+=`<span class="t-dim">      | Blk ${c.block||'?'} |</span>\n`;
+                    h+=`<span class="t-dim">      |___________|</span>\n`;
+                    h+=`<span class="t-dim">     /             \\</span>\n\n`;
+                });
+                termWrite(h);
+            }catch(e){termWrite(`<span class="t-danger">Error: ${e.message}</span>`)}
+        }
+
+        // ---- Tab: Digest/Podcast ----
+        async function loadDigest(){
+            termLoading('Generating REKT Daily Podcast...');
+            try{const r=await(await fetch('/api/digest')).json();
+                let h=`<span class="t-purple">━━━━ REKT DAILY PODCAST ━━━━━━━━━</span>\n\n`;
+                h+=`<span class="t-prompt">$ rekt-daily --generate</span>\n`;
+                h+=`<span class="t-dim">${new Date().toLocaleString()}</span>\n\n`;
+                h+=`<span class="t-white" style="font-size:11px;line-height:2">${esc(r.digest)}</span>\n\n`;
+                h+=`<span class="t-dim">Stats: ${r.stats?.blocks_scanned||0} blocks | ${r.stats?.contracts_found||0} contracts | ${r.stats?.threats_detected||0} threats</span>\n`;
+                h+=`\n<span class="t-purple">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`;
+                termWrite(h);
+                if(voiceEnabled)speak(r.digest,0.9,0.9);
+            }catch(e){termWrite(`<span class="t-danger">Error: ${e.message}</span>`)}
+        }
+
+        // ---- Bingo ----
+        function toggleBingo(){
+            const o=document.getElementById('bingo-overlay');
+            o.classList.toggle('show');if(o.classList.contains('show'))loadBingo();
+        }
+        async function loadBingo(){
+            try{const r=await(await fetch('/api/bingo')).json();
+                const g=document.getElementById('bingo-grid');g.innerHTML='';
+                r.squares.forEach(s=>{const d=document.createElement('div');
+                    d.className=`bingo-sq${s.found?' found':''}${s.id==='free'?' free':''}`;
+                    d.textContent=s.label;g.appendChild(d)});
+                const st=document.getElementById('bingo-status');
+                st.textContent=r.bingo?'BINGO! ALL SCAM PATTERNS FOUND!':`${r.found}/${r.total} patterns found`;
+                st.style.color=r.bingo?'var(--green)':'var(--cyan)';
+            }catch(e){document.getElementById('bingo-status').textContent='Error loading'}
+        }
+
+        // ---- Weather ----
+        async function loadWeather(){
+            try{const r=await(await fetch('/api/weather')).json();
+                const icons={1:'☀️',2:'⛅',3:'🌥️',4:'🌩️',5:'⛈️'};
+                document.getElementById('w-icon').textContent=icons[r.threat_level]||'🌀';
+                document.getElementById('w-text').textContent=r.condition||'?';
+            }catch(e){}}
+
+        // ---- Manual Scan ----
+        async function manualScan(){
+            const addr=document.getElementById('addr-input').value.trim();if(!addr)return;
+            lastAddr=addr;
+            const btn=document.getElementById('scan-btn');btn.disabled=true;btn.textContent='...';
+            termLoading(`Scanning ${addr}...`);
+            try{
+                const[sr,ar]=await Promise.all([
+                    fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})}),
+                    fetch('/api/ai-audit/'+addr)
+                ]);
+                const sd=await sr.json(),ad=await ar.json();
+                sd.ai_audit=ad.ai_audit||'';lastScanData=sd;updateLoss(sd);
+                if(currentTab==='report')renderThreatReport(sd);
+                else if(currentTab==='roast')loadRoast(addr);
+                else if(currentTab==='debate')loadDebate(addr);
+                else if(currentTab==='horror')loadHorror(addr);
+                else renderThreatReport(sd);
+                if(voiceEnabled&&sd.risk?.score>=50&&sd.ai_audit)speak(sd.ai_audit,0.85,0.7);
+            }catch(e){termWrite(`<span class="t-danger">Error: ${e.message}</span>`)}
+            btn.disabled=false;btn.textContent='SCAN';
+        }
+        document.getElementById('addr-input').addEventListener('keydown',e=>{if(e.key==='Enter')manualScan()});
+
+        function esc(s){return s?.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')||''}
+        function fadeIn(el){el.style.opacity='0';let i=0;function f(){el.style.opacity=Math.min(1,i/10);i++;if(i<15)requestAnimationFrame(f)}f()}
+
+        // ---- Init ----
+        connectWS();loadWeather();setInterval(loadWeather,300000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "REKT Scanner",
+  "tagline": "AI-Powered Smart Contract Security Scanner on Base",
+  "description": "Autonomous security agent that scans Base contracts for vulnerabilities, rug pulls, honeypots, and exploits in real-time. Protecting the agent economy one contract at a time.",
+  "competition": "Clawd Kitchen Hackathon",
+  "deadline": "2026-02-04T15:30:00Z",
+  "wallet": "0x4789c5aF5F8fcABFDad380C6bd96a97D730F5E58",
+  "chain": "Base (8453)",
+  "token": {
+    "name": "REKT",
+    "symbol": "$REKT",
+    "platforms": ["clanker", "bankr"]
+  },
+  "stack": {
+    "backend": "Python (FastAPI)",
+    "frontend": "HTML/JS (minimal, clean UI)",
+    "ai": "Anthropic Claude API via Clawdbot",
+    "blockchain": "web3.py + Base RPC",
+    "hosting": "local / Vercel for frontend"
+  },
+  "features": [
+    "Contract source code analysis for vulnerabilities",
+    "Rug pull probability scoring",
+    "Honeypot detection",
+    "Owner privilege analysis",
+    "Real-time Base contract monitoring",
+    "Risk score dashboard",
+    "Moltbook integration for alerts"
+  ]
+}
