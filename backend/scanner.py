@@ -18,12 +18,20 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 import json
+import logging
 import re
 import asyncio
 import time
 import traceback
 from datetime import datetime, timezone
 from collections import deque
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("rekt-scanner")
 
 import os
 try:
@@ -40,7 +48,7 @@ from typing import Optional
 
 app = FastAPI(
     title="REKT Scanner",
-    version="3.0.0",
+    version="4.0.0",
     description="Real-time AI-powered smart contract security scanner for Base. "
                 "Public API available for other agents. Built for Clawd Kitchen.",
 )
@@ -245,11 +253,11 @@ async def get_contract_source(address: str) -> dict:
 
             # Rate limited response - return empty but don't cache
             if data.get("message", "").startswith("Max rate"):
-                print(f"  BASESCAN: Rate limited, skipping source for {address[:12]}...")
+                logger.warning("BASESCAN: Rate limited, skipping source for %s...", address[:12])
                 return {}
 
     except Exception as e:
-        print(f"  BASESCAN: Error fetching source for {address[:12]}... - {e}")
+        logger.error("BASESCAN: Error fetching source for %s... - %s", address[:12], e)
 
     # Cache empty result to avoid re-hitting for unverified contracts
     source_cache[addr_lower] = {}
@@ -423,7 +431,7 @@ RULES:
                 if text:
                     return text
     except Exception as e:
-        print(f"  AI COMMENTARY: Error - {e}")
+        logger.error("AI COMMENTARY: Error - %s", e)
 
     # Fallback if AI fails
     if score >= 70:
@@ -474,7 +482,7 @@ Give a 3-5 sentence audit. Plain text, no markdown. Be specific about what each 
                 if text:
                     return text
     except Exception as e:
-        print(f"  AI AUDIT: Error - {e}")
+        logger.error("AI AUDIT: Error - %s", e)
     return ""
 
 async def generate_eli5_report(contract_data: dict, source_code: str = "") -> str:
@@ -541,7 +549,7 @@ RULES: Plain text only. NO markdown. Use simple words. Be detailed but clear. Us
                 if text:
                     return text
     except Exception as e:
-        print(f"  ELI5 REPORT: Error - {e}")
+        logger.error("ELI5 REPORT: Error - %s", e)
     return "Report generation failed. Manual review recommended."
 
 # ---- FUN FEATURES ENGINE ----
@@ -578,7 +586,7 @@ Rules: Be SAVAGE but funny. Point out specific bad code decisions. Make crypto j
                 text = re.sub(r'<think>[\s\S]*?</think>', '', text).strip()
                 if text: return text
     except Exception as e:
-        print(f"  ROAST: Error - {e}")
+        logger.error("ROAST: Error - %s", e)
     return "This contract is so bad even our AI refused to roast it. That says everything."
 
 async def generate_debate(source_code: str, findings: list, address: str, risk_score: int) -> dict:
@@ -608,7 +616,7 @@ async def generate_debate(source_code: str, findings: list, address: str, risk_s
             if resp.status_code == 200:
                 bear_text = re.sub(r'<think>[\s\S]*?</think>', '', resp.json()["choices"][0]["message"]["content"].strip()).strip()
     except Exception as e:
-        print(f"  DEBATE: Error - {e}")
+        logger.error("DEBATE: Error - %s", e)
     return {"bull": bull_text or "I got nothing. Even I cant defend this.", "bear": bear_text or "This contract is a death trap. Stay away."}
 
 async def generate_horror_story(contract_data: dict, source_code: str = "") -> str:
@@ -638,7 +646,7 @@ Start with "It was a dark night on Base mainnet..." Make it creepy and suspensef
                 text = re.sub(r'<think>[\s\S]*?</think>', '', resp.json()["choices"][0]["message"]["content"].strip()).strip()
                 if text: return text
     except Exception as e:
-        print(f"  HORROR: Error - {e}")
+        logger.error("HORROR: Error - %s", e)
     return "It was a dark night on Base mainnet. A contract appeared from the void. Its code was hidden, its deployer unknown. Nobody who interacted with it was ever seen again."
 
 async def generate_digest() -> str:
@@ -671,7 +679,7 @@ Write a 30-second podcast intro. Conversational, like a morning news anchor. Men
                 text = re.sub(r'<think>[\s\S]*?</think>', '', resp.json()["choices"][0]["message"]["content"].strip()).strip()
                 if text: return text
     except Exception as e:
-        print(f"  DIGEST: Error - {e}")
+        logger.error("DIGEST: Error - %s", e)
     return f"Welcome to REKT Daily. Today we scanned {total} contracts on Base and found {len(threats)} threats. Stay safe out there, and remember, DYOR."
 
 def generate_weather() -> dict:
@@ -787,11 +795,11 @@ Detected by REKT Scanner | @callusfbi #ClawdKitchen #Base"""
         if resp.status_code == 201:
             last_twitter_post = now
             stats["twitter_alerts_sent"] = stats.get("twitter_alerts_sent", 0) + 1
-            print(f"  TWITTER: Alert tweeted for {address[:12]}...")
+            logger.info("TWITTER: Alert tweeted for %s...", address[:12])
         else:
-            print(f"  TWITTER: Failed ({resp.status_code})")
+            logger.warning("TWITTER: Failed (%s)", resp.status_code)
     except Exception as e:
-        print(f"  TWITTER: Error - {e}")
+        logger.error("TWITTER: Error - %s", e)
 
 # ---- BONUS 1: Moltbook Auto-Alert System ----
 
@@ -800,7 +808,7 @@ async def post_moltbook_alert(contract_data: dict):
     global last_moltbook_post
     now = time.time()
     if now - last_moltbook_post < MOLTBOOK_COOLDOWN:
-        print(f"  MOLTBOOK: Skipped (cooldown, {int(MOLTBOOK_COOLDOWN - (now - last_moltbook_post))}s remaining)")
+        logger.debug("MOLTBOOK: Skipped (cooldown, %ds remaining)", int(MOLTBOOK_COOLDOWN - (now - last_moltbook_post)))
         return
 
     risk = contract_data.get("risk", {})
@@ -832,7 +840,7 @@ This is an automated alert from REKT Scanner, monitoring all contract deployment
 View on BaseScan: https://basescan.org/address/{address}
 
 ---
-*REKT Scanner v3.0 | Clawd Kitchen Hackathon | Autonomous Security Agent*
+*REKT Scanner v4.0 | Clawd Kitchen Hackathon | Autonomous Security Agent*
 
 #BaseSecurity #ThreatAlert #REKT #ClawdKitchen"""
 
@@ -846,11 +854,11 @@ View on BaseScan: https://basescan.org/address/{address}
             if resp.status_code == 201:
                 last_moltbook_post = now
                 stats["moltbook_alerts_sent"] += 1
-                print(f"  MOLTBOOK: Alert posted for {address[:12]}...")
+                logger.info("MOLTBOOK: Alert posted for %s...", address[:12])
             else:
-                print(f"  MOLTBOOK: Failed ({resp.status_code})")
+                logger.warning("MOLTBOOK: Failed (%s)", resp.status_code)
     except Exception as e:
-        print(f"  MOLTBOOK: Error - {e}")
+        logger.error("MOLTBOOK: Error - %s", e)
 
 # ---- BONUS 2: Deployer Reputation System ----
 
@@ -1029,19 +1037,19 @@ async def scan_new_contract(address: str, tx_hash: str, deployer: str, block_num
         # Log
         risk_str = f"[{risk['emoji']} {risk['rating']} ({risk['score']})]"
         rep_str = f"[Deployer: {dep_rep.get('reputation', '?')} ({dep_rep.get('trust_score', '?')})]"
-        print(f"  CONTRACT: {address[:10]}...{address[-6:]} | {contract_name} | {risk_str} | {rep_str} | {len(findings)} findings")
+        logger.info("CONTRACT: %s...%s | %s | %s | %s | %d findings", address[:10], address[-6:], contract_name, risk_str, rep_str, len(findings))
 
     except Exception as e:
-        print(f"  ERROR scanning {address}: {e}")
+        logger.error("Error scanning %s: %s", address, e)
 
 async def monitor_blocks():
     """Main monitoring loop - polls for new blocks and scans contract deployments"""
-    print("\n🔴 REKT SCANNER v2.0 - REAL-TIME MONITOR")
-    print("=" * 60)
-    print(f"Network: Base Mainnet")
-    print(f"Alert Threshold: Risk Score >= {ALERT_THRESHOLD}")
-    print(f"Poll Interval: {POLL_INTERVAL}s")
-    print("=" * 60)
+    logger.info("REKT SCANNER v4.0 - REAL-TIME MONITOR")
+    logger.info("=" * 60)
+    logger.info("Network: Base Mainnet")
+    logger.info("Alert Threshold: Risk Score >= %d", ALERT_THRESHOLD)
+    logger.info("Poll Interval: %ds", POLL_INTERVAL)
+    logger.info("=" * 60)
 
     stats["start_time"] = datetime.now(timezone.utc).isoformat()
     stats["is_monitoring"] = True
@@ -1056,7 +1064,7 @@ async def monitor_blocks():
             if last_block == 0:
                 last_block = current_block - 1
                 stats["last_block"] = current_block
-                print(f"\n▶ Starting from block {current_block}")
+                logger.info("Starting from block %d", current_block)
 
             if current_block > last_block:
                 for block_num in range(last_block + 1, current_block + 1):
@@ -1089,7 +1097,7 @@ async def monitor_blocks():
                     })
 
                     if contract_txs:
-                        print(f"\n📦 Block {block_num} | {len(txs)} txs | {len(contract_txs)} new contracts")
+                        logger.info("Block %d | %d txs | %d new contracts", block_num, len(txs), len(contract_txs))
 
                     # Scan each new contract
                     for tx in contract_txs:
@@ -1111,7 +1119,7 @@ async def monitor_blocks():
                 last_block = current_block
 
         except Exception as e:
-            print(f"Monitor error: {e}")
+            logger.error("Monitor error: %s", e)
             traceback.print_exc()
 
         await asyncio.sleep(POLL_INTERVAL)
@@ -1124,7 +1132,7 @@ async def startup():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "online", "agent": "REKT Scanner v2.0", "chain": "Base", "monitoring": stats["is_monitoring"]}
+    return {"status": "online", "agent": "REKT Scanner v4.0", "chain": "Base", "monitoring": stats["is_monitoring"]}
 
 @app.get("/api/stats")
 async def get_stats():
@@ -1175,7 +1183,7 @@ async def agent_check(address: str, agent_id: str = "anonymous"):
         "findings_count": len(findings),
         "findings_summary": [f["type"] for f in findings],
         "is_verified": bool(source_data.get("SourceCode")),
-        "scanned_by": "REKT Scanner v3.0",
+        "scanned_by": "REKT Scanner v4.0",
         "agent_api": True,
     }
 
@@ -1206,7 +1214,7 @@ async def agent_batch_check(addresses: str, agent_id: str = "anonymous"):
             "risk_score": risk["score"], "verdict": risk["rating"],
         })
 
-    return {"results": results, "checked": len(results), "scanned_by": "REKT Scanner v3.0"}
+    return {"results": results, "checked": len(results), "scanned_by": "REKT Scanner v4.0"}
 
 @app.get("/api/agent/stats")
 async def agent_api_stats():
@@ -1369,7 +1377,7 @@ async def scan_contract(req: ScanRequest):
         "bytecode_preview": contract_info.get("bytecode_preview", "")[:200],
         "findings": findings, "risk": risk,
         "findings_count": len(findings),
-        "scanned_by": "REKT Scanner v2.0 | Clawd Kitchen"
+        "scanned_by": "REKT Scanner v4.0 | Clawd Kitchen"
     }
 
 @app.post("/api/quick-check")
@@ -1410,7 +1418,7 @@ async def quick_check(req: QuickCheckRequest):
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     connected_clients.append(ws)
-    print(f"🔗 Client connected ({len(connected_clients)} total)")
+    logger.info("Client connected (%d total)", len(connected_clients))
 
     # Send current state
     await ws.send_text(json.dumps({
@@ -1422,13 +1430,23 @@ async def websocket_endpoint(ws: WebSocket):
     try:
         while True:
             # Keep alive - also accept scan requests from frontend
-            data = await ws.receive_text()
+            # Timeout after 5 minutes of no messages to clean up stale connections
+            try:
+                data = await asyncio.wait_for(ws.receive_text(), timeout=300)
+            except asyncio.TimeoutError:
+                logger.info("Client timed out (no message in 300s), closing")
+                break
             msg = json.loads(data)
             if msg.get("type") == "ping":
                 await ws.send_text(json.dumps({"type": "pong"}))
     except WebSocketDisconnect:
-        connected_clients.remove(ws)
-        print(f"🔌 Client disconnected ({len(connected_clients)} total)")
+        pass
+    except Exception as e:
+        logger.warning("WebSocket error: %s", e)
+    finally:
+        if ws in connected_clients:
+            connected_clients.remove(ws)
+        logger.info("Client disconnected (%d total)", len(connected_clients))
 
 # ---- Serve Frontend ----
 import os
