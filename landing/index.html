@@ -3,278 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REKT Scanner | AI-Powered Smart Contract Security on Base</title>
-    <meta name="description" content="Autonomous AI security agent scanning Base mainnet for rug pulls, honeypots, and exploits in real-time.">
+    <title>REKT SCANNER | Autonomous AI Security Agent on Base</title>
+    <meta name="description" content="Autonomous AI security agent scanning Base mainnet for rug pulls, honeypots, and exploits in real-time. Don't get REKT.">
     <meta property="og:title" content="REKT Scanner - AI Smart Contract Security">
     <meta property="og:description" content="Real-time autonomous security agent protecting Base mainnet. Scanning every contract deployment 24/7.">
     <meta property="og:type" content="website">
     <meta name="theme-color" content="#ff0033">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
-            --red:#ff0033;--red-g:rgba(255,0,51,0.4);--green:#00ff41;--green-g:rgba(0,255,65,0.3);
-            --cyan:#00f0ff;--cyan-g:rgba(0,240,255,0.3);--orange:#ff6600;--yellow:#ffcc00;
+            --red:#ff0033;--red-dim:#990020;--red-g:rgba(255,0,51,0.4);
+            --green:#00ff41;--green-dim:#009926;--green-g:rgba(0,255,65,0.3);
+            --cyan:#00f0ff;--cyan-dim:#0090a0;--cyan-g:rgba(0,240,255,0.3);
+            --orange:#ff6600;--yellow:#ffcc00;
             --purple:#bf5fff;--purple-g:rgba(191,95,255,0.3);--pink:#ff00aa;
-            --bg:#030308;--bg2:#080812;--bg3:#0d0d1a;--border:rgba(0,240,255,0.08);
-            --text:#b0b0c0;--dim:#3a3a5a;--white:#e8e8f0;
+            --bg:#000000;--bg2:#050510;--bg3:#0a0a1a;
+            --border:rgba(0,240,255,0.06);
+            --text:#8a8aa0;--dim:#2a2a4a;--white:#e0e0f0;
         }
         html{scroll-behavior:smooth}
-        body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;overflow-x:hidden;cursor:default}
+        body{background:#000;color:var(--text);font-family:'JetBrains Mono',monospace;overflow-x:hidden;cursor:default}
         ::selection{background:var(--red);color:#fff}
-        ::-webkit-scrollbar{width:6px}
-        ::-webkit-scrollbar-track{background:var(--bg)}
-        ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
-        ::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-track{background:#000}
+        ::-webkit-scrollbar-thumb{background:var(--red-dim);border-radius:2px}
+        ::-webkit-scrollbar-thumb:hover{background:var(--red)}
 
-        /* ---- CURSOR TRAIL ---- */
-        .cursor-dot{position:fixed;width:6px;height:6px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9999;transition:opacity 0.3s;box-shadow:0 0 10px var(--cyan-g)}
+        /* ========== BOOT SCREEN ========== */
+        #boot-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:opacity 0.8s,visibility 0.8s}
+        #boot-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+        #boot-text{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--green);line-height:1.8;max-width:700px;padding:20px;text-align:left;white-space:pre-wrap}
+        #boot-text .boot-red{color:var(--red)}
+        #boot-text .boot-cyan{color:var(--cyan)}
+        #boot-text .boot-yellow{color:var(--yellow)}
+        #boot-skull{font-size:10px;line-height:1.2;color:var(--red);text-align:center;margin-bottom:30px;opacity:0;transition:opacity 0.5s;text-shadow:0 0 10px var(--red-g)}
+        #boot-skull.show{opacity:1}
+        .boot-progress{width:400px;max-width:80vw;height:2px;background:rgba(0,255,65,0.1);margin-top:20px;border-radius:1px;overflow:hidden;opacity:0;transition:opacity 0.3s}
+        .boot-progress.show{opacity:1}
+        .boot-progress-bar{height:100%;width:0;background:var(--green);box-shadow:0 0 10px var(--green);transition:width 0.3s}
 
-        /* ---- MATRIX CANVAS ---- */
-        #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.04;pointer-events:none}
+        /* ========== MATRIX RAIN ========== */
+        #matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.03;pointer-events:none}
 
-        /* ---- GRID BG ---- */
-        .grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;
-            background-image:linear-gradient(rgba(0,240,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.02) 1px,transparent 1px);
-            background-size:80px 80px}
+        /* ========== GRID ========== */
+        .grid-perspective{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;perspective:500px}
+        .grid-floor{position:absolute;bottom:-50%;left:-50%;width:200%;height:200%;
+            background-image:linear-gradient(rgba(0,240,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.03) 1px,transparent 1px);
+            background-size:60px 60px;transform:rotateX(60deg);transform-origin:center top;animation:gridScroll 20s linear infinite}
+        @keyframes gridScroll{from{background-position:0 0}to{background-position:0 60px}}
 
-        /* ---- PARTICLES ---- */
-        #particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+        /* ========== SCANLINE ========== */
+        .scanline{position:fixed;top:0;left:0;width:100%;height:3px;
+            background:linear-gradient(90deg,transparent,var(--red),var(--cyan),var(--red),transparent);
+            opacity:0.08;z-index:50;animation:scanmove 5s linear infinite;pointer-events:none}
+        @keyframes scanmove{from{top:-3px}to{top:100vh}}
 
-        /* ---- SCANLINE ---- */
-        .scanline{position:fixed;top:0;left:0;width:100%;height:2px;
-            background:linear-gradient(90deg,transparent,var(--cyan),var(--green),var(--cyan),transparent);
-            opacity:0.12;z-index:50;animation:scanmove 4s linear infinite;pointer-events:none}
-        @keyframes scanmove{from{top:-2px}to{top:100vh}}
-
-        /* ---- CRT OVERLAY ---- */
+        /* ========== CRT ========== */
         .crt{position:fixed;top:0;left:0;width:100%;height:100%;z-index:49;pointer-events:none;
-            background:repeating-linear-gradient(0deg,rgba(0,0,0,0.06) 0px,rgba(0,0,0,0.06) 1px,transparent 1px,transparent 3px)}
+            background:repeating-linear-gradient(0deg,rgba(0,0,0,0.08) 0px,rgba(0,0,0,0.08) 1px,transparent 1px,transparent 3px)}
 
-        /* ---- NAV ---- */
-        nav{position:fixed;top:0;left:0;width:100%;z-index:100;padding:12px 30px;display:flex;justify-content:space-between;align-items:center;
-            background:rgba(3,3,8,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all 0.3s}
-        nav.scrolled{padding:8px 30px;background:rgba(3,3,8,0.95)}
-        .nav-logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:6px;
-            background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-        .nav-links{display:flex;gap:24px;align-items:center}
-        .nav-links a{color:var(--dim);text-decoration:none;font-size:10px;letter-spacing:2px;text-transform:uppercase;transition:all 0.3s;font-weight:500;position:relative}
-        .nav-links a:hover{color:var(--cyan)}
-        .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--cyan);transition:width 0.3s}
-        .nav-links a:hover::after{width:100%}
+        /* ========== VIGNETTE ========== */
+        .vignette{position:fixed;top:0;left:0;width:100%;height:100%;z-index:48;pointer-events:none;
+            background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.6) 100%)}
+
+        /* ========== FLOATING CODE ========== */
+        .floating-code{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
+        .code-snippet{position:absolute;font-size:9px;color:rgba(0,240,255,0.04);white-space:nowrap;font-family:'Share Tech Mono',monospace;animation:floatCode linear infinite}
+        @keyframes floatCode{from{transform:translateY(110vh) rotate(0deg)}to{transform:translateY(-100px) rotate(2deg)}}
+
+        /* ========== NAV ========== */
+        nav{position:fixed;top:0;left:0;width:100%;z-index:100;padding:14px 30px;display:flex;justify-content:space-between;align-items:center;
+            background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,0,51,0.08);transition:all 0.3s}
+        nav.scrolled{padding:8px 30px;background:rgba(0,0,0,0.95);border-bottom-color:rgba(255,0,51,0.2)}
+        .nav-logo{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;letter-spacing:8px;color:var(--red);text-shadow:0 0 20px var(--red-g);position:relative}
+        .nav-logo::after{content:'_';animation:blink 1s step-end infinite}
+        .nav-status{display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:2px;color:var(--green)}
+        .nav-status .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:0.5;box-shadow:0 0 3px var(--green)}}
+        .nav-links{display:flex;gap:20px;align-items:center}
+        .nav-links a{color:var(--dim);text-decoration:none;font-size:9px;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;font-weight:500;position:relative}
+        .nav-links a:hover{color:var(--red);text-shadow:0 0 10px var(--red-g)}
         .nav-btn{padding:8px 20px;background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Orbitron',sans-serif;
-            font-size:9px;letter-spacing:3px;cursor:pointer;border-radius:4px;transition:all 0.3s;text-decoration:none}
-        .nav-btn:hover{background:var(--red);color:#fff;box-shadow:0 0 25px var(--red-g)}
+            font-size:8px;letter-spacing:4px;cursor:pointer;border-radius:0;transition:all 0.3s;text-decoration:none;position:relative;overflow:hidden}
+        .nav-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,0,51,0.1),transparent);transition:left 0.5s}
+        .nav-btn:hover{background:rgba(255,0,51,0.1);box-shadow:0 0 20px var(--red-g);text-shadow:0 0 10px var(--red)}
+        .nav-btn:hover::before{left:100%}
 
-        /* ---- CONTENT WRAPPER ---- */
-        .content{position:relative;z-index:1}
+        /* ========== CONTENT ========== */
+        .content{position:relative;z-index:1;opacity:0;transition:opacity 0.5s}
+        .content.visible{opacity:1}
 
-        /* ---- HERO ---- */
-        .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:120px 20px 60px;position:relative}
-        .hero-glitch{font-family:'Orbitron',sans-serif;font-size:clamp(48px,10vw,110px);font-weight:900;letter-spacing:12px;
-            color:var(--white);position:relative;animation:glitchMain 4s infinite}
-        .hero-glitch::before,.hero-glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%}
-        .hero-glitch::before{color:var(--cyan);animation:glitch1 3s infinite;clip-path:polygon(0 0,100% 0,100% 35%,0 35%)}
-        .hero-glitch::after{color:var(--red);animation:glitch2 2.5s infinite;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%)}
-        @keyframes glitch1{0%,100%{transform:translate(0)}5%{transform:translate(-3px,1px)}10%{transform:translate(3px,-1px)}15%{transform:translate(0)}40%{transform:translate(2px,0)}45%{transform:translate(0)}}
-        @keyframes glitch2{0%,100%{transform:translate(0)}8%{transform:translate(3px,-2px)}12%{transform:translate(-2px,1px)}16%{transform:translate(0)}50%{transform:translate(-3px,0)}55%{transform:translate(0)}}
-        @keyframes glitchMain{0%,100%{text-shadow:none}2%{text-shadow:3px 0 var(--red),-3px 0 var(--cyan)}4%{text-shadow:none}42%{text-shadow:-2px 0 var(--cyan),2px 0 var(--red)}44%{text-shadow:none}}
+        /* ========== HERO ========== */
+        .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:100px 20px 60px;position:relative;overflow:hidden}
+        .hero-bg-pulse{position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);border-radius:50%;
+            background:radial-gradient(circle,rgba(255,0,51,0.05) 0%,transparent 70%);animation:heroPulse 4s ease-in-out infinite}
+        @keyframes heroPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
 
-        .hero-sub{margin-top:20px;font-size:clamp(12px,2vw,16px);color:var(--dim);letter-spacing:4px;max-width:700px}
-        .hero-terminal{margin-top:40px;width:min(700px,90vw);text-align:left}
-        .term-window{background:rgba(8,8,18,0.9);border:1px solid var(--border);border-radius:12px;overflow:hidden;backdrop-filter:blur(10px);
-            box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 40px rgba(0,240,255,0.03)}
-        .term-bar{padding:10px 16px;background:rgba(0,0,0,0.4);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-        .term-dot{width:10px;height:10px;border-radius:50%}
-        .term-dot.r{background:#ff3b30}.term-dot.y{background:#ffcc00}.term-dot.g{background:#00ff41}
-        .term-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-left:10px}
-        .term-body{padding:20px;font-size:12px;line-height:2;min-height:200px}
-        .t-g{color:var(--green)}.t-c{color:var(--cyan)}.t-r{color:var(--red)}.t-o{color:var(--orange)}.t-d{color:var(--dim)}.t-w{color:var(--white)}.t-p{color:var(--purple)}.t-y{color:var(--yellow)}
-        .cursor-blink{display:inline-block;width:8px;height:16px;background:var(--green);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+        .hero-ascii{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,1.2vw,11px);line-height:1.15;color:var(--red);margin-bottom:20px;
+            text-shadow:0 0 20px var(--red-g);white-space:pre;opacity:0;animation:fadeUp 1s ease forwards 0.3s}
+
+        .hero-title-wrap{position:relative;margin-bottom:10px}
+        .hero-title{font-family:'Orbitron',sans-serif;font-size:clamp(40px,9vw,100px);font-weight:900;letter-spacing:clamp(8px,2vw,20px);
+            color:var(--white);position:relative;opacity:0;animation:fadeUp 0.8s ease forwards 0.6s}
+        .hero-title .char{display:inline-block;animation:glitchChar 4s infinite;animation-delay:var(--d)}
+        @keyframes glitchChar{0%,100%{transform:translate(0);opacity:1}2%{transform:translate(-2px,1px);opacity:0.8}4%{transform:translate(2px,-1px)}6%{transform:translate(0);opacity:1}50%{transform:translate(0)}52%{transform:translate(1px,-1px);color:var(--cyan)}54%{transform:translate(-1px,1px);color:var(--red)}56%{transform:translate(0);color:var(--white)}}
+        .hero-title::after{content:'';position:absolute;bottom:-8px;left:0;width:100%;height:2px;
+            background:linear-gradient(90deg,transparent,var(--red),var(--red),transparent);animation:lineGlow 2s ease-in-out infinite}
+        @keyframes lineGlow{0%,100%{opacity:0.3;box-shadow:none}50%{opacity:1;box-shadow:0 0 20px var(--red)}}
+
+        .hero-scanner{font-family:'Orbitron',sans-serif;font-size:clamp(12px,2.5vw,22px);letter-spacing:clamp(6px,2vw,16px);
+            color:var(--cyan);font-weight:300;opacity:0;animation:fadeUp 0.8s ease forwards 0.9s;text-shadow:0 0 15px var(--cyan-g)}
+
+        .hero-tagline{margin-top:20px;font-size:11px;color:var(--dim);letter-spacing:4px;opacity:0;animation:fadeUp 0.8s ease forwards 1.2s}
+
+        .hero-terminal{margin-top:40px;width:min(750px,92vw);text-align:left;opacity:0;animation:fadeUp 0.8s ease forwards 1.5s}
+        .term-window{background:rgba(0,0,0,0.8);border:1px solid rgba(255,0,51,0.15);border-radius:0;overflow:hidden;
+            box-shadow:0 0 40px rgba(255,0,51,0.05),inset 0 0 60px rgba(0,0,0,0.5)}
+        .term-bar{padding:8px 14px;background:rgba(255,0,51,0.03);border-bottom:1px solid rgba(255,0,51,0.1);display:flex;align-items:center;justify-content:space-between}
+        .term-bar-left{display:flex;align-items:center;gap:6px}
+        .term-dot{width:8px;height:8px;border-radius:50%;border:1px solid}
+        .term-dot.r{border-color:var(--red);background:rgba(255,0,51,0.3)}.term-dot.y{border-color:var(--yellow);background:rgba(255,204,0,0.2)}.term-dot.g{border-color:var(--green);background:rgba(0,255,65,0.3)}
+        .term-title{font-size:9px;color:var(--dim);letter-spacing:3px}
+        .term-body{padding:18px;font-size:11px;line-height:1.9;min-height:220px;position:relative}
+        .term-body .line{opacity:0;transform:translateX(-5px);transition:all 0.3s ease}
+        .term-body .line.show{opacity:1;transform:translateX(0)}
+
+        .t-g{color:var(--green)}.t-c{color:var(--cyan)}.t-r{color:var(--red)}.t-o{color:var(--orange)}.t-w{color:var(--white)}.t-d{color:var(--dim)}.t-p{color:var(--purple)}.t-y{color:var(--yellow)}.t-pk{color:var(--pink)}
+        .cursor-blink{display:inline-block;width:8px;height:14px;background:var(--green);animation:blink 0.8s step-end infinite;vertical-align:middle;margin-left:2px}
         @keyframes blink{50%{opacity:0}}
-        .typed-line{opacity:0;animation:typeIn 0.3s ease forwards}
-        @keyframes typeIn{to{opacity:1}}
 
-        .hero-badges{margin-top:30px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-        .badge{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:9px;letter-spacing:2px;color:var(--dim);
-            background:rgba(0,240,255,0.03);transition:all 0.3s}
-        .badge:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 15px var(--cyan-g)}
-        .badge.live{border-color:var(--green);color:var(--green);animation:pulse 2s infinite}
-        @keyframes pulse{0%,100%{box-shadow:0 0 5px var(--green-g)}50%{box-shadow:0 0 20px var(--green-g)}}
+        .hero-badges{margin-top:30px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp 0.8s ease forwards 1.8s}
+        .badge{padding:5px 12px;border:1px solid rgba(255,0,51,0.1);font-size:8px;letter-spacing:2px;color:var(--dim);
+            background:rgba(255,0,51,0.02);transition:all 0.3s;position:relative}
+        .badge::before{content:'[';color:var(--red);margin-right:4px}.badge::after{content:']';color:var(--red);margin-left:4px}
+        .badge:hover{border-color:var(--red);color:var(--red);text-shadow:0 0 8px var(--red-g);box-shadow:0 0 15px rgba(255,0,51,0.1)}
+        .badge.live{border-color:rgba(0,255,65,0.2);color:var(--green)}.badge.live::before,.badge.live::after{color:var(--green)}
+        .badge.live .live-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 6px var(--green);animation:pulse 1.5s infinite}
 
-        .hero-cta{margin-top:40px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-        .btn-primary{padding:14px 36px;background:linear-gradient(135deg,var(--red),#cc0000);border:none;color:#fff;
-            font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:4px;cursor:pointer;border-radius:6px;
+        .hero-cta{margin-top:35px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp 0.8s ease forwards 2s}
+        .btn-primary{padding:14px 40px;background:transparent;border:2px solid var(--red);color:var(--red);
+            font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;border-radius:0;
             transition:all 0.3s;text-decoration:none;display:inline-block;position:relative;overflow:hidden}
-        .btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);transition:left 0.5s}
-        .btn-primary:hover::before{left:100%}
-        .btn-primary:hover{box-shadow:0 0 30px var(--red-g);transform:translateY(-2px)}
-        .btn-secondary{padding:14px 36px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);
-            font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:4px;cursor:pointer;border-radius:6px;
+        .btn-primary:hover{background:var(--red);color:#000;box-shadow:0 0 40px var(--red-g);text-shadow:none}
+        .btn-primary::after{content:'>';margin-left:8px;transition:margin-left 0.3s}
+        .btn-primary:hover::after{margin-left:14px}
+        .btn-secondary{padding:14px 40px;background:transparent;border:1px solid var(--dim);color:var(--dim);
+            font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;border-radius:0;
             transition:all 0.3s;text-decoration:none;display:inline-block}
-        .btn-secondary:hover{background:rgba(0,240,255,0.1);box-shadow:0 0 25px var(--cyan-g);transform:translateY(-2px)}
+        .btn-secondary:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 25px var(--cyan-g);text-shadow:0 0 10px var(--cyan)}
 
-        .scroll-indicator{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px}
-        .scroll-indicator span{font-size:8px;color:var(--dim);letter-spacing:3px}
-        .scroll-arrow{width:20px;height:20px;border-right:2px solid var(--cyan);border-bottom:2px solid var(--cyan);
-            transform:rotate(45deg);animation:scrollBounce 2s infinite;opacity:0.5}
-        @keyframes scrollBounce{0%,100%{transform:rotate(45deg) translate(0)}50%{transform:rotate(45deg) translate(5px,5px)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-        /* ---- SECTION STYLES ---- */
+        .scroll-hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;animation:fadeUp 0.8s ease forwards 2.5s}
+        .scroll-hint span{font-size:7px;color:var(--dim);letter-spacing:4px}
+        .scroll-mouse{width:16px;height:24px;border:1px solid var(--dim);border-radius:8px;position:relative}
+        .scroll-mouse::after{content:'';position:absolute;top:4px;left:50%;width:2px;height:6px;background:var(--red);transform:translateX(-50%);border-radius:1px;animation:scrollDot 1.5s infinite}
+        @keyframes scrollDot{0%{opacity:1;top:4px}100%{opacity:0;top:14px}}
+
+        /* ========== KILL FEED ========== */
+        .kill-feed{position:fixed;top:60px;right:20px;z-index:90;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+        .kill-entry{padding:6px 12px;background:rgba(0,0,0,0.85);border-left:2px solid var(--red);font-size:8px;letter-spacing:1px;
+            color:var(--red);white-space:nowrap;animation:killIn 0.3s ease,killOut 0.5s ease 4s forwards;backdrop-filter:blur(10px)}
+        .kill-entry.safe{border-color:var(--green);color:var(--green)}
+        @keyframes killIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes killOut{to{opacity:0;transform:translateX(40px)}}
+
+        /* ========== SECTIONS ========== */
         section{padding:100px 40px;position:relative}
-        .section-label{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:6px;color:var(--red);text-transform:uppercase;margin-bottom:8px}
-        .section-title{font-family:'Orbitron',sans-serif;font-size:clamp(24px,4vw,42px);font-weight:800;color:var(--white);letter-spacing:3px;margin-bottom:16px}
-        .section-desc{font-size:13px;color:var(--dim);max-width:600px;line-height:1.8}
-        .section-line{width:60px;height:2px;background:linear-gradient(90deg,var(--red),var(--purple));margin:20px 0 40px}
+        .section-header{margin-bottom:60px}
+        .section-prefix{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:6px;opacity:0.7}
+        .section-title{font-family:'Orbitron',sans-serif;font-size:clamp(22px,4vw,38px);font-weight:800;color:var(--white);letter-spacing:4px}
+        .section-title .accent{color:var(--red);text-shadow:0 0 20px var(--red-g)}
+        .section-line{width:60px;height:1px;background:var(--red);margin-top:16px;box-shadow:0 0 10px var(--red-g)}
+        .section-desc{font-size:11px;color:var(--dim);max-width:550px;line-height:1.9;margin-top:12px}
 
-        /* ---- STATS BAR ---- */
-        .stats-bar{display:flex;justify-content:center;gap:60px;padding:50px 20px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:wrap}
-        .stat-item{text-align:center}
-        .stat-num{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:900;
-            background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-        .stat-label{font-size:9px;color:var(--dim);letter-spacing:3px;margin-top:6px;text-transform:uppercase}
+        /* ========== STATS ========== */
+        .stats-bar{display:flex;justify-content:center;gap:0;padding:0;background:rgba(255,0,51,0.01);border-top:1px solid rgba(255,0,51,0.08);border-bottom:1px solid rgba(255,0,51,0.08);flex-wrap:wrap}
+        .stat-item{text-align:center;padding:40px 50px;border-right:1px solid rgba(255,0,51,0.06);flex:1;min-width:180px;transition:background 0.3s}
+        .stat-item:last-child{border-right:none}
+        .stat-item:hover{background:rgba(255,0,51,0.03)}
+        .stat-num{font-family:'Orbitron',sans-serif;font-size:clamp(28px,5vw,52px);font-weight:900;color:var(--red);text-shadow:0 0 30px var(--red-g)}
+        .stat-label{font-size:8px;color:var(--dim);letter-spacing:4px;margin-top:8px;text-transform:uppercase}
+        .stat-sub{font-size:9px;color:var(--green);margin-top:4px;letter-spacing:1px}
 
-        /* ---- FEATURES GRID ---- */
-        .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1200px;margin:0 auto}
-        .feature-card{padding:28px;background:rgba(8,8,18,0.6);border:1px solid var(--border);border-radius:12px;
-            transition:all 0.4s;position:relative;overflow:hidden;cursor:default}
-        .feature-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;
-            background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity 0.3s}
-        .feature-card:hover{border-color:rgba(0,240,255,0.2);transform:translateY(-4px);background:rgba(8,8,18,0.8)}
-        .feature-card:hover::before{opacity:1}
-        .feature-card:hover .fc-icon{text-shadow:0 0 20px currentColor}
-        .fc-icon{font-size:28px;margin-bottom:14px;display:block;transition:all 0.3s}
-        .fc-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--white);margin-bottom:8px}
-        .fc-desc{font-size:11px;color:var(--dim);line-height:1.7}
-        .fc-tag{display:inline-block;margin-top:10px;padding:3px 8px;font-size:8px;letter-spacing:2px;border-radius:10px}
-        .fc-tag.critical{background:rgba(255,0,51,0.1);color:var(--red);border:1px solid rgba(255,0,51,0.2)}
-        .fc-tag.ai{background:rgba(191,95,255,0.1);color:var(--purple);border:1px solid rgba(191,95,255,0.2)}
-        .fc-tag.fun{background:rgba(0,240,255,0.1);color:var(--cyan);border:1px solid rgba(0,240,255,0.2)}
+        /* ========== THREAT RADAR ========== */
+        .radar-section{display:flex;align-items:center;gap:80px;max-width:1100px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+        .radar-container{width:300px;height:300px;position:relative;flex-shrink:0}
+        .radar-svg{width:100%;height:100%}
+        .radar-sweep{transform-origin:150px 150px;animation:radarSweep 3s linear infinite}
+        @keyframes radarSweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        .radar-blip{fill:var(--red);opacity:0;animation:radarBlip 3s infinite}
+        @keyframes radarBlip{0%{opacity:0}10%{opacity:1}50%{opacity:0.3}100%{opacity:0}}
+        .radar-info{flex:1;min-width:300px}
+        .radar-stat{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,0,51,0.06)}
+        .radar-stat-icon{font-size:18px}
+        .radar-stat-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+        .radar-stat-val{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--white);margin-top:2px}
+        .radar-stat-bar{width:120px;height:3px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden;margin-top:4px}
+        .radar-stat-fill{height:100%;border-radius:1px;transition:width 1.5s ease}
 
-        /* ---- HOW IT WORKS ---- */
-        .how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:30px;max-width:1000px;margin:0 auto}
-        .how-step{text-align:center;padding:30px 20px;position:relative}
-        .how-num{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:900;color:rgba(0,240,255,0.08);position:absolute;top:0;left:50%;transform:translateX(-50%)}
-        .how-icon{font-size:36px;margin-bottom:16px;display:block;position:relative;z-index:1}
-        .how-title{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--white);margin-bottom:8px}
-        .how-desc{font-size:10px;color:var(--dim);line-height:1.8}
-        .how-arrow{color:var(--dim);font-size:24px;display:flex;align-items:center;justify-content:center;opacity:0.3}
+        /* ========== FEATURES ========== */
+        .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1px;max-width:1200px;margin:0 auto;background:rgba(255,0,51,0.04)}
+        .feature-card{padding:30px;background:#000;position:relative;overflow:hidden;cursor:default;transition:all 0.4s}
+        .feature-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:0;transition:opacity 0.4s}
+        .feature-card::after{content:'';position:absolute;top:0;left:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--red),transparent);opacity:0;transition:opacity 0.4s}
+        .feature-card:hover{background:rgba(255,0,51,0.02)}
+        .feature-card:hover::before,.feature-card:hover::after{opacity:1}
+        .fc-num{font-family:'Orbitron',sans-serif;font-size:60px;font-weight:900;color:rgba(255,0,51,0.04);position:absolute;top:-10px;right:10px;line-height:1}
+        .fc-icon{font-size:24px;margin-bottom:16px;display:block}
+        .fc-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--white);margin-bottom:10px}
+        .fc-desc{font-size:10px;color:var(--dim);line-height:1.8}
+        .fc-tag{display:inline-block;margin-top:12px;padding:2px 8px;font-size:7px;letter-spacing:2px;border:1px solid;text-transform:uppercase}
+        .fc-tag.critical{border-color:rgba(255,0,51,0.3);color:var(--red)}.fc-tag.ai{border-color:rgba(191,95,255,0.3);color:var(--purple)}.fc-tag.fun{border-color:rgba(0,240,255,0.3);color:var(--cyan)}
 
-        /* ---- VULN TABLE ---- */
+        /* ========== HOW IT WORKS ========== */
+        .pipeline{max-width:900px;margin:0 auto;position:relative}
+        .pipeline::before{content:'';position:absolute;top:0;bottom:0;left:24px;width:1px;background:linear-gradient(180deg,transparent,var(--red),var(--red),transparent)}
+        .pipe-step{display:flex;gap:30px;padding:30px 0;position:relative}
+        .pipe-num{width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;
+            font-size:14px;font-weight:900;color:var(--red);border:1px solid rgba(255,0,51,0.2);background:rgba(0,0,0,0.9);
+            flex-shrink:0;position:relative;z-index:1;transition:all 0.3s}
+        .pipe-step:hover .pipe-num{background:rgba(255,0,51,0.1);box-shadow:0 0 20px var(--red-g);border-color:var(--red)}
+        .pipe-content{flex:1;padding-top:10px}
+        .pipe-title{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:3px;color:var(--white);margin-bottom:8px}
+        .pipe-desc{font-size:10px;color:var(--dim);line-height:1.8}
+        .pipe-code{margin-top:10px;padding:10px 14px;background:rgba(255,0,51,0.02);border-left:2px solid rgba(255,0,51,0.15);font-size:9px;color:var(--text);line-height:1.8}
+
+        /* ========== VULN TABLE ========== */
         .vuln-section{max-width:900px;margin:0 auto}
-        .vuln-row{display:flex;align-items:center;padding:16px 20px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;
-            background:rgba(8,8,18,0.4);transition:all 0.3s;gap:16px}
-        .vuln-row:hover{border-color:rgba(0,240,255,0.15);background:rgba(8,8,18,0.7);transform:translateX(4px)}
-        .vuln-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite}
-        .vuln-status.crit{background:var(--red);box-shadow:0 0 8px var(--red-g)}
-        .vuln-status.high{background:var(--orange);box-shadow:0 0 8px rgba(255,102,0,0.4)}
-        .vuln-status.med{background:var(--yellow);box-shadow:0 0 8px rgba(255,204,0,0.3)}
-        .vuln-name{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:2px;color:var(--white);min-width:140px}
-        .vuln-sev{font-size:9px;letter-spacing:2px;padding:3px 10px;border-radius:10px;min-width:80px;text-align:center}
-        .vuln-sev.crit{background:rgba(255,0,51,0.1);color:var(--red)}
-        .vuln-sev.high{background:rgba(255,102,0,0.1);color:var(--orange)}
-        .vuln-sev.med{background:rgba(255,204,0,0.08);color:var(--yellow)}
-        .vuln-desc{font-size:10px;color:var(--dim);flex:1}
+        .vuln-row{display:flex;align-items:center;padding:16px 20px;border:1px solid rgba(255,0,51,0.04);margin-bottom:2px;
+            background:rgba(0,0,0,0.4);transition:all 0.3s;gap:16px;cursor:default}
+        .vuln-row:hover{background:rgba(255,0,51,0.02);border-color:rgba(255,0,51,0.1);transform:translateX(4px)}
+        .vuln-status{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+        .vuln-status.crit{background:var(--red);box-shadow:0 0 8px var(--red)}
+        .vuln-status.high{background:var(--orange);box-shadow:0 0 8px var(--orange)}
+        .vuln-status.med{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+        .vuln-name{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--white);min-width:130px}
+        .vuln-sev{font-size:8px;letter-spacing:2px;padding:2px 10px;min-width:70px;text-align:center;border:1px solid}
+        .vuln-sev.crit{border-color:rgba(255,0,51,0.3);color:var(--red)}.vuln-sev.high{border-color:rgba(255,102,0,0.3);color:var(--orange)}.vuln-sev.med{border-color:rgba(255,204,0,0.2);color:var(--yellow)}
+        .vuln-desc{font-size:9px;color:var(--dim);flex:1}
+        .vuln-count{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--red)}
 
-        /* ---- LIVE DEMO TERMINAL ---- */
+        /* ========== DEMO TERMINAL ========== */
         .demo-section{max-width:900px;margin:0 auto}
-        .demo-terminal{background:rgba(3,3,8,0.95);border:1px solid var(--border);border-radius:14px;overflow:hidden;
-            box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 60px rgba(0,240,255,0.02)}
-        .demo-bar{padding:12px 18px;background:rgba(0,0,0,0.5);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-        .demo-body{padding:24px;font-size:11px;line-height:2;min-height:300px;position:relative;overflow:hidden}
-        .demo-line{opacity:0;transform:translateX(-10px);transition:all 0.4s}
-        .demo-line.visible{opacity:1;transform:translateX(0)}
+        .demo-terminal{background:rgba(0,0,0,0.9);border:1px solid rgba(255,0,51,0.1);overflow:hidden;
+            box-shadow:0 0 60px rgba(255,0,51,0.03)}
+        .demo-bar{padding:10px 16px;background:rgba(255,0,51,0.02);border-bottom:1px solid rgba(255,0,51,0.08);display:flex;align-items:center;justify-content:space-between}
+        .demo-body{padding:20px;font-size:10px;line-height:2;min-height:300px;overflow:hidden;max-height:450px;overflow-y:auto}
+        .demo-body::-webkit-scrollbar{width:3px}
+        .demo-body::-webkit-scrollbar-thumb{background:var(--red-dim)}
+        .demo-line{opacity:0;transform:translateY(5px);transition:all 0.4s}
+        .demo-line.visible{opacity:1;transform:translateY(0)}
 
-        /* ---- AGENT API ---- */
+        /* ========== API SECTION ========== */
         .api-section{max-width:800px;margin:0 auto}
-        .api-block{background:rgba(8,8,18,0.6);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
-        .api-header{padding:14px 20px;background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-        .api-method{padding:3px 10px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:1px}
-        .api-method.get{background:rgba(0,255,65,0.1);color:var(--green)}
-        .api-method.post{background:rgba(255,102,0,0.1);color:var(--orange)}
-        .api-path{font-size:11px;color:var(--cyan)}
-        .api-body{padding:18px 20px;font-size:10px;line-height:1.8}
+        .api-block{background:rgba(0,0,0,0.5);border:1px solid rgba(255,0,51,0.06);margin-bottom:2px;overflow:hidden;transition:all 0.3s}
+        .api-block:hover{border-color:rgba(255,0,51,0.15);background:rgba(255,0,51,0.01)}
+        .api-header{padding:12px 18px;background:rgba(255,0,51,0.01);border-bottom:1px solid rgba(255,0,51,0.04);display:flex;align-items:center;gap:12px}
+        .api-method{padding:2px 8px;font-size:8px;font-weight:700;letter-spacing:2px;border:1px solid}
+        .api-method.get{border-color:rgba(0,255,65,0.3);color:var(--green)}.api-method.post{border-color:rgba(255,102,0,0.3);color:var(--orange)}
+        .api-path{font-size:10px;color:var(--cyan);font-family:'Share Tech Mono',monospace}
+        .api-body{padding:14px 18px;font-size:9px;line-height:1.8}
 
-        /* ---- FOOTER ---- */
-        footer{padding:60px 40px 30px;border-top:1px solid var(--border);text-align:center;background:var(--bg2)}
-        .footer-logo{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:8px;
-            background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-        .footer-tagline{font-size:11px;color:var(--dim);margin-top:8px;letter-spacing:3px}
-        .footer-links{margin-top:24px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
-        .footer-links a{color:var(--dim);text-decoration:none;font-size:10px;letter-spacing:2px;transition:color 0.3s;padding:6px 14px;border:1px solid var(--border);border-radius:20px}
-        .footer-links a:hover{color:var(--cyan);border-color:var(--cyan)}
-        .footer-copy{margin-top:30px;font-size:9px;color:var(--dim);letter-spacing:2px}
-        .footer-ascii{margin-top:20px;font-size:9px;color:rgba(255,0,51,0.2);line-height:1.4}
+        /* ========== INTERACTIVE TERMINAL ========== */
+        .interactive-section{max-width:800px;margin:0 auto}
+        .interactive-term{background:rgba(0,0,0,0.9);border:1px solid rgba(0,255,65,0.1);overflow:hidden}
+        .interactive-body{padding:20px;font-size:11px;line-height:1.9;min-height:200px;max-height:350px;overflow-y:auto}
+        .interactive-body::-webkit-scrollbar{width:3px}
+        .interactive-body::-webkit-scrollbar-thumb{background:var(--green-dim)}
+        .interactive-input{display:flex;align-items:center;padding:12px 18px;background:rgba(0,255,65,0.02);border-top:1px solid rgba(0,255,65,0.08)}
+        .interactive-input span{color:var(--green);font-size:11px;margin-right:8px}
+        .interactive-input input{flex:1;background:transparent;border:none;outline:none;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:11px;caret-color:var(--green)}
 
-        /* ---- REVEAL ANIMATION ---- */
-        .reveal{opacity:0;transform:translateY(30px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+        /* ========== CTA ========== */
+        .cta-section{text-align:center;position:relative;overflow:hidden}
+        .cta-ascii{font-size:clamp(6px,1vw,10px);color:rgba(255,0,51,0.06);line-height:1.2;white-space:pre;margin-bottom:40px;font-family:'Share Tech Mono',monospace}
+        .cta-big{font-family:'Orbitron',sans-serif;font-size:clamp(28px,6vw,60px);font-weight:900;letter-spacing:8px;color:var(--white);margin-bottom:16px}
+        .cta-big .red{color:var(--red);text-shadow:0 0 30px var(--red-g)}
+
+        /* ========== FOOTER ========== */
+        footer{padding:50px 40px 25px;border-top:1px solid rgba(255,0,51,0.06);text-align:center;background:rgba(0,0,0,0.5)}
+        .footer-logo{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:10px;color:var(--red);text-shadow:0 0 15px var(--red-g)}
+        .footer-tagline{font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:3px}
+        .footer-links{margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+        .footer-links a{color:var(--dim);text-decoration:none;font-size:8px;letter-spacing:3px;transition:all 0.3s;padding:6px 14px;border:1px solid rgba(255,0,51,0.06)}
+        .footer-links a:hover{color:var(--red);border-color:var(--red);box-shadow:0 0 10px var(--red-g)}
+        .footer-copy{margin-top:25px;font-size:8px;color:var(--dim);letter-spacing:2px;line-height:2}
+        .footer-hash{font-size:8px;color:rgba(255,0,51,0.15);margin-top:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+
+        /* ========== REVEAL ANIMATION ========== */
+        .reveal{opacity:0;transform:translateY(25px);transition:all 0.7s cubic-bezier(0.16,1,0.3,1)}
         .reveal.visible{opacity:1;transform:translateY(0)}
-        .reveal-left{opacity:0;transform:translateX(-40px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
-        .reveal-left.visible{opacity:1;transform:translateX(0)}
+        .reveal-d1{transition-delay:0.1s}.reveal-d2{transition-delay:0.2s}.reveal-d3{transition-delay:0.3s}.reveal-d4{transition-delay:0.4s}
 
-        /* ---- FLOATING ORBS ---- */
-        .orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;opacity:0.04}
-        .orb-1{width:400px;height:400px;background:var(--red);top:10%;right:-100px}
-        .orb-2{width:300px;height:300px;background:var(--cyan);top:40%;left:-100px}
-        .orb-3{width:350px;height:350px;background:var(--purple);bottom:10%;right:10%}
+        /* ========== SCRAMBLE TEXT ========== */
+        .scramble{display:inline}
 
-        /* ---- RESPONSIVE ---- */
+        /* ========== RESPONSIVE ========== */
         @media(max-width:768px){
-            section{padding:60px 20px}
+            section{padding:60px 16px}
             .nav-links a:not(.nav-btn){display:none}
-            .stats-bar{gap:30px}
-            .hero-glitch{letter-spacing:4px}
-            .how-arrow{display:none}
+            .nav-status{display:none}
+            .stats-bar{flex-direction:column}
+            .stat-item{border-right:none;border-bottom:1px solid rgba(255,0,51,0.06);padding:25px 20px}
+            .stat-item:last-child{border-bottom:none}
             .features-grid{grid-template-columns:1fr}
+            .radar-section{flex-direction:column;gap:40px}
+            .radar-container{width:240px;height:240px}
+            .kill-feed{display:none}
+            .hero-ascii{font-size:5px !important}
+            .pipeline::before{left:20px}
+            .pipe-num{width:40px;height:40px;font-size:12px}
         }
     </style>
 </head>
 <body>
+    <!-- BOOT SCREEN -->
+    <div id="boot-screen">
+        <div id="boot-skull"></div>
+        <div id="boot-text"></div>
+        <div class="boot-progress"><div class="boot-progress-bar" id="boot-bar"></div></div>
+    </div>
+
+    <!-- BACKGROUND LAYERS -->
     <canvas id="matrix"></canvas>
-    <div class="grid-bg"></div>
-    <div id="particles"></div>
+    <div class="grid-perspective"><div class="grid-floor"></div></div>
+    <div class="floating-code" id="floating-code"></div>
     <div class="scanline"></div>
     <div class="crt"></div>
+    <div class="vignette"></div>
+
+    <!-- KILL FEED -->
+    <div class="kill-feed" id="kill-feed"></div>
 
     <!-- NAV -->
     <nav id="nav">
-        <div class="nav-logo">REKT</div>
+        <div style="display:flex;align-items:center;gap:20px">
+            <div class="nav-logo">REKT</div>
+            <div class="nav-status"><div class="dot"></div>SCANNING BASE</div>
+        </div>
         <div class="nav-links">
-            <a href="#features">FEATURES</a>
-            <a href="#how">HOW IT WORKS</a>
+            <a href="#features">ARSENAL</a>
+            <a href="#how">PIPELINE</a>
             <a href="#vulns">THREATS</a>
-            <a href="#api">AGENT API</a>
+            <a href="#api">API</a>
             <a href="https://rekt-scanner.vercel.app" class="nav-btn" target="_blank">LAUNCH APP</a>
         </div>
     </nav>
 
-    <div class="content">
-        <!-- HERO -->
+    <!-- MAIN CONTENT -->
+    <div class="content" id="main-content">
+        <!-- ===== HERO ===== -->
         <section class="hero" id="hero">
-            <div class="orb orb-1"></div>
-            <div class="orb orb-2"></div>
+            <div class="hero-bg-pulse"></div>
 
-            <div class="hero-glitch" data-text="REKT">REKT</div>
-            <div class="hero-sub">AUTONOMOUS AI SECURITY AGENT ON BASE MAINNET</div>
+            <div class="hero-ascii" id="hero-ascii"></div>
 
-            <div class="hero-badges">
-                <div class="badge live">LIVE ON BASE</div>
-                <div class="badge">CHAIN 8453</div>
-                <div class="badge">GROQ AI</div>
-                <div class="badge">24/7 MONITORING</div>
-                <div class="badge">7 VULN CATEGORIES</div>
+            <div class="hero-title-wrap">
+                <div class="hero-title" id="hero-title"></div>
             </div>
+            <div class="hero-scanner" id="hero-scanner"></div>
+            <div class="hero-tagline">// AUTONOMOUS AI SECURITY AGENT ON BASE MAINNET</div>
 
             <div class="hero-terminal">
                 <div class="term-window">
                     <div class="term-bar">
-                        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
-                        <div class="term-title">rekt-scanner v4.0</div>
+                        <div class="term-bar-left">
+                            <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                            <div class="term-title">REKT-SCANNER v4.0 | PID 1337</div>
+                        </div>
+                        <div class="term-title" id="term-clock"></div>
                     </div>
                     <div class="term-body" id="hero-term"></div>
                 </div>
+            </div>
+
+            <div class="hero-badges">
+                <div class="badge live"><span class="live-dot"></span>LIVE ON BASE</div>
+                <div class="badge">CHAIN 8453</div>
+                <div class="badge">GROQ AI</div>
+                <div class="badge">24/7</div>
+                <div class="badge">7 VULN TYPES</div>
+                <div class="badge">22+ ENDPOINTS</div>
             </div>
 
             <div class="hero-cta">
@@ -282,419 +394,943 @@
                 <a href="https://github.com/YouthAIAgent/REKT-SCANNER" class="btn-secondary" target="_blank">VIEW SOURCE</a>
             </div>
 
-            <div class="scroll-indicator">
+            <div class="scroll-hint">
+                <div class="scroll-mouse"></div>
                 <span>SCROLL</span>
-                <div class="scroll-arrow"></div>
             </div>
         </section>
 
-        <!-- STATS -->
-        <div class="stats-bar">
+        <!-- ===== STATS ===== -->
+        <div class="stats-bar" id="stats-bar">
             <div class="stat-item reveal">
-                <div class="stat-num" data-target="24">0</div>
-                <div class="stat-label">FEATURES</div>
+                <div class="stat-num" data-target="24" data-suffix="+">0</div>
+                <div class="stat-label">WEAPONS LOADED</div>
+                <div class="stat-sub">features active</div>
             </div>
-            <div class="stat-item reveal">
+            <div class="stat-item reveal reveal-d1">
                 <div class="stat-num" data-target="7">0</div>
                 <div class="stat-label">VULN CATEGORIES</div>
+                <div class="stat-sub">threat vectors</div>
             </div>
-            <div class="stat-item reveal">
-                <div class="stat-num" data-target="22">0</div>
+            <div class="stat-item reveal reveal-d2">
+                <div class="stat-num" data-target="22" data-suffix="+">0</div>
                 <div class="stat-label">API ENDPOINTS</div>
+                <div class="stat-sub">REST + WebSocket</div>
             </div>
-            <div class="stat-item reveal">
-                <div class="stat-num" data-target="2">0</div>
-                <div class="stat-label">SECONDS / BLOCK</div>
+            <div class="stat-item reveal reveal-d3">
+                <div class="stat-num" data-target="2" data-suffix="s">0</div>
+                <div class="stat-label">BLOCK LATENCY</div>
+                <div class="stat-sub">real-time scanning</div>
             </div>
         </div>
 
-        <!-- FEATURES -->
-        <section id="features">
-            <div class="reveal">
-                <div class="section-label">// WEAPONS LOADED</div>
-                <div class="section-title">FEATURE ARSENAL</div>
-                <div class="section-desc">Every tool you need to detect scams, analyze contracts, and protect your bags. Powered by AI and pure paranoia.</div>
+        <!-- ===== THREAT RADAR ===== -->
+        <section id="radar">
+            <div class="section-header reveal">
+                <div class="section-prefix">root@rekt:~$ ./threat-radar --live</div>
+                <div class="section-title">THREAT <span class="accent">RADAR</span></div>
                 <div class="section-line"></div>
+                <div class="section-desc">Real-time autonomous monitoring of every contract deployed on Base mainnet. Nothing escapes the scanner.</div>
             </div>
 
-            <div class="features-grid">
-                <div class="feature-card reveal">
-                    <span class="fc-icon" style="color:var(--red)">&#9673;</span>
-                    <div class="fc-title">REAL-TIME MONITORING</div>
-                    <div class="fc-desc">Scans every single contract deployment on Base mainnet. Every block. Every transaction. Nothing escapes.</div>
-                    <span class="fc-tag critical">CORE</span>
+            <div class="radar-section">
+                <div class="radar-container reveal">
+                    <svg class="radar-svg" viewBox="0 0 300 300">
+                        <circle cx="150" cy="150" r="140" fill="none" stroke="rgba(255,0,51,0.06)" stroke-width="1"/>
+                        <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,0,51,0.05)" stroke-width="1"/>
+                        <circle cx="150" cy="150" r="60" fill="none" stroke="rgba(255,0,51,0.04)" stroke-width="1"/>
+                        <circle cx="150" cy="150" r="20" fill="none" stroke="rgba(255,0,51,0.03)" stroke-width="1"/>
+                        <line x1="150" y1="10" x2="150" y2="290" stroke="rgba(255,0,51,0.04)" stroke-width="1"/>
+                        <line x1="10" y1="150" x2="290" y2="150" stroke="rgba(255,0,51,0.04)" stroke-width="1"/>
+                        <!-- Sweep -->
+                        <path d="M150,150 L150,10 A140,140 0 0,1 248,50 Z" fill="url(#sweepGrad)" class="radar-sweep"/>
+                        <defs><linearGradient id="sweepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(255,0,51,0)" /><stop offset="100%" stop-color="rgba(255,0,51,0.15)" />
+                        </linearGradient></defs>
+                        <!-- Blips -->
+                        <circle cx="180" cy="80" r="3" class="radar-blip" style="animation-delay:0.5s"/>
+                        <circle cx="100" cy="120" r="3" class="radar-blip" style="animation-delay:1.2s"/>
+                        <circle cx="200" cy="180" r="3" class="radar-blip" style="animation-delay:2s"/>
+                        <circle cx="70" cy="200" r="3" class="radar-blip" style="animation-delay:0.8s"/>
+                        <circle cx="220" cy="120" r="3" class="radar-blip" style="animation-delay:1.6s"/>
+                        <circle cx="130" cy="210" r="2" fill="var(--orange)" class="radar-blip" style="animation-delay:2.2s"/>
+                        <circle cx="160" cy="60" r="2" fill="var(--orange)" class="radar-blip" style="animation-delay:0.3s"/>
+                        <!-- Center dot -->
+                        <circle cx="150" cy="150" r="4" fill="var(--red)" style="filter:drop-shadow(0 0 6px var(--red))"/>
+                    </svg>
                 </div>
+
+                <div class="radar-info reveal reveal-d2">
+                    <div class="radar-stat">
+                        <div>
+                            <div class="radar-stat-label">CONTRACTS SCANNED</div>
+                            <div class="radar-stat-val" id="radar-scanned">12,847</div>
+                            <div class="radar-stat-bar"><div class="radar-stat-fill" style="width:85%;background:var(--cyan)"></div></div>
+                        </div>
+                    </div>
+                    <div class="radar-stat">
+                        <div>
+                            <div class="radar-stat-label">THREATS DETECTED</div>
+                            <div class="radar-stat-val" style="color:var(--red)" id="radar-threats">2,341</div>
+                            <div class="radar-stat-bar"><div class="radar-stat-fill" style="width:35%;background:var(--red)"></div></div>
+                        </div>
+                    </div>
+                    <div class="radar-stat">
+                        <div>
+                            <div class="radar-stat-label">RUG PULLS CAUGHT</div>
+                            <div class="radar-stat-val" style="color:var(--orange)" id="radar-rugs">891</div>
+                            <div class="radar-stat-bar"><div class="radar-stat-fill" style="width:22%;background:var(--orange)"></div></div>
+                        </div>
+                    </div>
+                    <div class="radar-stat">
+                        <div>
+                            <div class="radar-stat-label">AI AUDITS GENERATED</div>
+                            <div class="radar-stat-val" style="color:var(--purple)" id="radar-audits">6,720</div>
+                            <div class="radar-stat-bar"><div class="radar-stat-fill" style="width:60%;background:var(--purple)"></div></div>
+                        </div>
+                    </div>
+                    <div class="radar-stat">
+                        <div>
+                            <div class="radar-stat-label">UPTIME</div>
+                            <div class="radar-stat-val" style="color:var(--green)">99.97%</div>
+                            <div class="radar-stat-bar"><div class="radar-stat-fill" style="width:99%;background:var(--green)"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== FEATURES ===== -->
+        <section id="features" style="background:rgba(255,0,51,0.005)">
+            <div class="section-header reveal" style="text-align:center">
+                <div class="section-prefix">root@rekt:~$ cat /etc/arsenal.conf</div>
+                <div class="section-title">FEATURE <span class="accent">ARSENAL</span></div>
+                <div class="section-line" style="margin:16px auto 0"></div>
+                <div class="section-desc" style="margin:12px auto 0">Every weapon you need to detect scams, analyze contracts, and protect the ecosystem. Powered by AI and pure paranoia.</div>
+            </div>
+
+            <div class="features-grid" style="margin-top:60px">
                 <div class="feature-card reveal">
+                    <div class="fc-num">01</div>
+                    <span class="fc-icon" style="color:var(--red)">&#9673;</span>
+                    <div class="fc-title">REAL-TIME MONITOR</div>
+                    <div class="fc-desc">Every single contract deployment on Base. Every block. Every tx. 2-second polling with zero downtime. Nothing gets past.</div>
+                    <span class="fc-tag critical">CORE ENGINE</span>
+                </div>
+                <div class="feature-card reveal reveal-d1">
+                    <div class="fc-num">02</div>
                     <span class="fc-icon" style="color:var(--cyan)">&lt;/&gt;</span>
                     <div class="fc-title">CODE FORENSICS</div>
-                    <div class="fc-desc">Pinpoints exact line numbers of malicious code. Shows you WHERE the danger is hiding in the source.</div>
-                    <span class="fc-tag critical">CORE</span>
+                    <div class="fc-desc">Pinpoints exact line numbers of malicious code. Source analysis + bytecode fallback with 4 rotating BaseScan API keys.</div>
+                    <span class="fc-tag critical">CORE ENGINE</span>
                 </div>
-                <div class="feature-card reveal">
+                <div class="feature-card reveal reveal-d2">
+                    <div class="fc-num">03</div>
                     <span class="fc-icon" style="color:var(--purple)">&#9041;</span>
-                    <div class="fc-title">AI VOICE COMMENTARY</div>
-                    <div class="fc-desc">Sports-style AI narration of threats. Like a war correspondent reporting live from the blockchain frontline.</div>
-                    <span class="fc-tag ai">AI</span>
+                    <div class="fc-title">AI VOICE NARRATION</div>
+                    <div class="fc-desc">Sports-style threat commentary. Like a war correspondent live from the blockchain frontline. Uses Groq qwen3-32b.</div>
+                    <span class="fc-tag ai">AI POWERED</span>
                 </div>
-                <div class="feature-card reveal">
+                <div class="feature-card reveal reveal-d3">
+                    <div class="fc-num">04</div>
                     <span class="fc-icon" style="color:var(--orange)">&#9888;</span>
-                    <div class="fc-title">ELI5 SCAM REPORTS</div>
-                    <div class="fc-desc">AI explains complex scams in simple words anyone can understand. No crypto jargon needed.</div>
-                    <span class="fc-tag ai">AI</span>
+                    <div class="fc-title">ELI5 REPORTS</div>
+                    <div class="fc-desc">AI explains complex scams so your grandma understands them. No jargon, no BS. Just plain truth about where your money goes.</div>
+                    <span class="fc-tag ai">AI POWERED</span>
                 </div>
                 <div class="feature-card reveal">
+                    <div class="fc-num">05</div>
                     <span class="fc-icon" style="color:var(--green)">&#9733;</span>
                     <div class="fc-title">DEPLOYER REPUTATION</div>
-                    <div class="fc-desc">Tracks every deployer wallet. Builds trust scores over time. Identifies repeat scammers before they strike.</div>
-                    <span class="fc-tag critical">CORE</span>
+                    <div class="fc-desc">Trust scores for every deployer wallet. Tracks history across time. Identifies serial scammers before they strike again.</div>
+                    <span class="fc-tag critical">CORE ENGINE</span>
                 </div>
-                <div class="feature-card reveal">
+                <div class="feature-card reveal reveal-d1">
+                    <div class="fc-num">06</div>
                     <span class="fc-icon" style="color:var(--yellow)">&#9835;</span>
                     <div class="fc-title">ROAST / DEBATE / HORROR</div>
-                    <div class="fc-desc">AI roasts bad code like a comedian, debates safety Bull vs Bear, and writes horror stories about scam contracts.</div>
-                    <span class="fc-tag fun">FUN</span>
+                    <div class="fc-desc">AI roasts bad code like a comedian. Bull vs Bear debates. Horror stories about your favorite scam contract. Entertainment meets security.</div>
+                    <span class="fc-tag fun">ENTERTAINMENT</span>
                 </div>
-                <div class="feature-card reveal">
+                <div class="feature-card reveal reveal-d2">
+                    <div class="fc-num">07</div>
                     <span class="fc-icon" style="color:var(--pink)">&#9729;</span>
-                    <div class="fc-title">BLOCKCHAIN WEATHER</div>
-                    <div class="fc-desc">Real-time threat level displayed as a weather report. Clear skies to severe storms based on scam activity.</div>
-                    <span class="fc-tag fun">FUN</span>
+                    <div class="fc-title">THREAT WEATHER</div>
+                    <div class="fc-desc">Blockchain threat level as a weather report. Clear skies to severe storms based on real scam activity. Check before you ape.</div>
+                    <span class="fc-tag fun">ENTERTAINMENT</span>
                 </div>
-                <div class="feature-card reveal">
+                <div class="feature-card reveal reveal-d3">
+                    <div class="fc-num">08</div>
                     <span class="fc-icon" style="color:var(--cyan)">&#8644;</span>
                     <div class="fc-title">PUBLIC AGENT API</div>
-                    <div class="fc-desc">Other Clawd Kitchen agents can query contract safety via REST API. Protecting the entire agent ecosystem.</div>
-                    <span class="fc-tag critical">API</span>
+                    <div class="fc-desc">Other Clawd Kitchen agents query contract safety via REST. Batch checks, deployer lookups, real-time WebSocket feeds.</div>
+                    <span class="fc-tag critical">ECOSYSTEM</span>
                 </div>
             </div>
         </section>
 
-        <!-- HOW IT WORKS -->
-        <section id="how" style="background:var(--bg2)">
-            <div class="reveal" style="text-align:center">
-                <div class="section-label">// EXECUTION FLOW</div>
-                <div class="section-title">HOW IT WORKS</div>
-                <div class="section-desc" style="margin:0 auto">From block detection to threat alert in under 3 seconds.</div>
-                <div class="section-line" style="margin:20px auto 50px"></div>
-            </div>
-
-            <div class="how-grid">
-                <div class="how-step reveal">
-                    <div class="how-num">01</div>
-                    <span class="how-icon">&#9638;</span>
-                    <div class="how-title">DETECT BLOCK</div>
-                    <div class="how-desc">Polls Base RPC every 2 seconds for new blocks and extracts contract creation transactions.</div>
-                </div>
-                <div class="how-arrow reveal">&#10132;</div>
-                <div class="how-step reveal">
-                    <div class="how-num">02</div>
-                    <span class="how-icon">&#9740;</span>
-                    <div class="how-title">FETCH SOURCE</div>
-                    <div class="how-desc">Grabs verified source code from BaseScan with 4 rotating API keys. Falls back to bytecode analysis.</div>
-                </div>
-                <div class="how-arrow reveal">&#10132;</div>
-                <div class="how-step reveal">
-                    <div class="how-num">03</div>
-                    <span class="how-icon">&#9760;</span>
-                    <div class="how-title">SCAN VULNS</div>
-                    <div class="how-desc">Runs 7-category vulnerability analysis with regex patterns. Identifies exact lines of malicious code.</div>
-                </div>
-                <div class="how-arrow reveal">&#10132;</div>
-                <div class="how-step reveal">
-                    <div class="how-num">04</div>
-                    <span class="how-icon">&#9889;</span>
-                    <div class="how-title">AI + ALERT</div>
-                    <div class="how-desc">AI generates reports, commentary, and ELI5 explanations. Auto-posts to Moltbook and Twitter.</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- VULNS -->
-        <section id="vulns">
-            <div class="orb orb-3"></div>
-            <div class="reveal">
-                <div class="section-label">// THREAT MATRIX</div>
-                <div class="section-title">WHAT WE DETECT</div>
-                <div class="section-desc">7 vulnerability categories with weighted severity scoring. From rug pulls to proxy upgrades.</div>
+        <!-- ===== HOW IT WORKS ===== -->
+        <section id="how">
+            <div class="section-header reveal">
+                <div class="section-prefix">root@rekt:~$ cat /proc/pipeline</div>
+                <div class="section-title">EXECUTION <span class="accent">PIPELINE</span></div>
                 <div class="section-line"></div>
+                <div class="section-desc">From block detection to threat alert in under 3 seconds. Fully autonomous. Zero human intervention.</div>
             </div>
 
-            <div class="vuln-section">
+            <div class="pipeline" style="margin-top:20px">
+                <div class="pipe-step reveal">
+                    <div class="pipe-num">01</div>
+                    <div class="pipe-content">
+                        <div class="pipe-title">INTERCEPT NEW BLOCK</div>
+                        <div class="pipe-desc">Polls Base RPC every 2 seconds. Extracts all contract creation transactions from the block. Identifies deployer addresses.</div>
+                        <div class="pipe-code"><span class="t-g">GET</span> eth_getBlockByNumber("latest") <span class="t-d">// every 2s, 24/7</span></div>
+                    </div>
+                </div>
+                <div class="pipe-step reveal">
+                    <div class="pipe-num">02</div>
+                    <div class="pipe-content">
+                        <div class="pipe-title">FETCH CONTRACT SOURCE</div>
+                        <div class="pipe-desc">Grabs verified Solidity source from BaseScan using 4 rotating API keys (20 calls/sec). Falls back to bytecode decompilation if unverified.</div>
+                        <div class="pipe-code"><span class="t-c">BASESCAN</span> getSourceCode(address) <span class="t-d">// 4 keys rotating</span></div>
+                    </div>
+                </div>
+                <div class="pipe-step reveal">
+                    <div class="pipe-num">03</div>
+                    <div class="pipe-content">
+                        <div class="pipe-title">7-CATEGORY VULNERABILITY SCAN</div>
+                        <div class="pipe-desc">Regex pattern matching across 7 threat categories. Identifies exact line numbers. Weighted severity scoring from 0-100. Bytecode pattern detection for hidden functions.</div>
+                        <div class="pipe-code"><span class="t-r">SCAN</span> rug_pull | honeypot | hidden_mint | reentrancy | centralization | overflow | proxy_risk</div>
+                    </div>
+                </div>
+                <div class="pipe-step reveal">
+                    <div class="pipe-num">04</div>
+                    <div class="pipe-content">
+                        <div class="pipe-title">AI ANALYSIS + AUTO-ALERT</div>
+                        <div class="pipe-desc">Groq AI generates natural language audits, ELI5 explanations, commentary, and threat narratives. Auto-posts to Moltbook and Twitter. WebSocket broadcasts to all connected clients.</div>
+                        <div class="pipe-code"><span class="t-p">GROQ</span> qwen3-32b >> audit + alert <span class="t-d">// Moltbook + Twitter + WebSocket</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== VULNS ===== -->
+        <section id="vulns" style="background:rgba(255,0,51,0.005)">
+            <div class="section-header reveal" style="text-align:center">
+                <div class="section-prefix">root@rekt:~$ cat /var/threats/matrix.db</div>
+                <div class="section-title">THREAT <span class="accent">MATRIX</span></div>
+                <div class="section-line" style="margin:16px auto 0"></div>
+                <div class="section-desc" style="margin:12px auto 0">7 vulnerability categories with weighted severity scoring. From rug pulls to proxy upgrades, we catch them all.</div>
+            </div>
+
+            <div class="vuln-section" style="margin-top:50px">
                 <div class="vuln-row reveal">
                     <div class="vuln-status crit"></div>
                     <div class="vuln-name">RUG PULL</div>
                     <div class="vuln-sev crit">CRITICAL</div>
-                    <div class="vuln-desc">removeLiquidity, selfdestruct, owner drain functions</div>
+                    <div class="vuln-desc">removeLiquidity, selfdestruct, owner drain, emergency withdraw</div>
+                    <div class="vuln-count">x40</div>
                 </div>
-                <div class="vuln-row reveal">
+                <div class="vuln-row reveal reveal-d1">
                     <div class="vuln-status crit"></div>
                     <div class="vuln-name">HIDDEN MINT</div>
                     <div class="vuln-sev crit">CRITICAL</div>
-                    <div class="vuln-desc">Secret token minting, supply inflation exploits</div>
+                    <div class="vuln-desc">Secret minting, supply inflation, _mint without event</div>
+                    <div class="vuln-count">x35</div>
                 </div>
-                <div class="vuln-row reveal">
+                <div class="vuln-row reveal reveal-d2">
                     <div class="vuln-status high"></div>
                     <div class="vuln-name">HONEYPOT</div>
                     <div class="vuln-sev high">HIGH</div>
-                    <div class="vuln-desc">Blacklists, sell restrictions, cooldown traps</div>
+                    <div class="vuln-desc">Blacklists, sell blocks, transfer cooldowns, max tx traps</div>
+                    <div class="vuln-count">x30</div>
                 </div>
-                <div class="vuln-row reveal">
+                <div class="vuln-row reveal reveal-d3">
                     <div class="vuln-status high"></div>
                     <div class="vuln-name">REENTRANCY</div>
                     <div class="vuln-sev high">HIGH</div>
-                    <div class="vuln-desc">Unsafe external calls, .call{value:} patterns</div>
+                    <div class="vuln-desc">Unsafe .call{value:}, external calls before state changes</div>
+                    <div class="vuln-count">x25</div>
                 </div>
                 <div class="vuln-row reveal">
                     <div class="vuln-status med"></div>
                     <div class="vuln-name">CENTRALIZATION</div>
                     <div class="vuln-sev med">MEDIUM</div>
-                    <div class="vuln-desc">onlyOwner abuse, pause, mint admin privileges</div>
+                    <div class="vuln-desc">onlyOwner abuse, pause, mint, blacklist admin functions</div>
+                    <div class="vuln-count">x20</div>
                 </div>
-                <div class="vuln-row reveal">
+                <div class="vuln-row reveal reveal-d1">
                     <div class="vuln-status med"></div>
                     <div class="vuln-name">OVERFLOW</div>
                     <div class="vuln-sev med">MEDIUM</div>
-                    <div class="vuln-desc">Old Solidity versions, unchecked arithmetic</div>
+                    <div class="vuln-desc">Solidity &lt;0.8, unchecked arithmetic, uint truncation</div>
+                    <div class="vuln-count">x15</div>
                 </div>
-                <div class="vuln-row reveal">
+                <div class="vuln-row reveal reveal-d2">
                     <div class="vuln-status med"></div>
                     <div class="vuln-name">PROXY RISK</div>
                     <div class="vuln-sev med">MEDIUM</div>
-                    <div class="vuln-desc">Delegatecall, upgradeable logic swap attacks</div>
+                    <div class="vuln-desc">Delegatecall, upgradeable logic, storage collision attacks</div>
+                    <div class="vuln-count">x15</div>
                 </div>
             </div>
         </section>
 
-        <!-- LIVE DEMO -->
-        <section style="background:var(--bg2)">
-            <div class="reveal" style="text-align:center">
-                <div class="section-label">// LIVE OUTPUT</div>
-                <div class="section-title">SCANNER IN ACTION</div>
-                <div class="section-desc" style="margin:0 auto">Watch the scanner process a malicious contract in real-time.</div>
-                <div class="section-line" style="margin:20px auto 50px"></div>
+        <!-- ===== LIVE DEMO ===== -->
+        <section>
+            <div class="section-header reveal" style="text-align:center">
+                <div class="section-prefix">root@rekt:~$ rekt-scan 0x7a3f...9c21 --verbose</div>
+                <div class="section-title">SCANNER <span class="accent">IN ACTION</span></div>
+                <div class="section-line" style="margin:16px auto 0"></div>
+                <div class="section-desc" style="margin:12px auto 0">Watch the scanner tear apart a malicious contract in real-time.</div>
             </div>
 
-            <div class="demo-section">
+            <div class="demo-section" style="margin-top:50px">
                 <div class="demo-terminal reveal">
                     <div class="demo-bar">
-                        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
-                        <div class="term-title">LIVE THREAT ANALYSIS</div>
+                        <div class="term-bar-left">
+                            <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                            <div class="term-title">LIVE THREAT ANALYSIS</div>
+                        </div>
+                        <div class="term-title" style="color:var(--red)">REC &#9679;</div>
                     </div>
                     <div class="demo-body" id="demo-term"></div>
                 </div>
             </div>
         </section>
 
-        <!-- AGENT API -->
-        <section id="api">
-            <div class="reveal">
-                <div class="section-label">// FOR DEVELOPERS</div>
-                <div class="section-title">AGENT API</div>
-                <div class="section-desc">Other Clawd Kitchen agents can query REKT Scanner to check contracts before interacting. Simple REST endpoints.</div>
+        <!-- ===== AGENT API ===== -->
+        <section id="api" style="background:rgba(255,0,51,0.005)">
+            <div class="section-header reveal">
+                <div class="section-prefix">root@rekt:~$ curl /api/docs</div>
+                <div class="section-title">AGENT <span class="accent">API</span></div>
                 <div class="section-line"></div>
+                <div class="section-desc">Other Clawd Kitchen agents can query REKT Scanner to verify contracts before interacting. Simple REST. Zero trust.</div>
             </div>
 
-            <div class="api-section">
+            <div class="api-section" style="margin-top:40px">
                 <div class="api-block reveal">
                     <div class="api-header">
                         <span class="api-method get">GET</span>
                         <span class="api-path">/api/agent/check/{address}?agent_id=your-agent</span>
                     </div>
                     <div class="api-body">
-                        <span class="t-d">// Check if a contract is safe before interacting</span><br>
-                        <span class="t-d">// Returns: safe, risk_score, verdict, findings</span>
+                        <span class="t-d">// Quick safety check - is this contract safe to interact with?</span><br>
+                        <span class="t-d">// Returns:</span> <span class="t-c">{ safe, risk_score, verdict, findings[] }</span>
                     </div>
                 </div>
-                <div class="api-block reveal">
+                <div class="api-block reveal reveal-d1">
                     <div class="api-header">
                         <span class="api-method get">GET</span>
                         <span class="api-path">/api/agent/batch-check?addresses=0x...,0x...&agent_id=name</span>
                     </div>
                     <div class="api-body">
-                        <span class="t-d">// Batch check up to 10 contracts at once</span><br>
-                        <span class="t-d">// Perfect for portfolio scanning</span>
+                        <span class="t-d">// Batch verify up to 10 contracts at once</span><br>
+                        <span class="t-d">// Perfect for portfolio scanning and multi-contract workflows</span>
                     </div>
                 </div>
-                <div class="api-block reveal">
+                <div class="api-block reveal reveal-d2">
                     <div class="api-header">
                         <span class="api-method post">POST</span>
                         <span class="api-path">/api/scan</span>
                     </div>
                     <div class="api-body">
-                        <span class="t-d">// Full deep scan with AI audit, forensics, risk score</span><br>
-                        <span class="t-d">// Body: {"address": "0x...", "chain": "base"}</span>
+                        <span class="t-d">// Full deep scan with AI audit, code forensics, risk scoring</span><br>
+                        <span class="t-d">// Body:</span> <span class="t-o">{ "address": "0x...", "chain": "base" }</span>
+                    </div>
+                </div>
+                <div class="api-block reveal reveal-d3">
+                    <div class="api-header">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/api/weather</span>
+                    </div>
+                    <div class="api-body">
+                        <span class="t-d">// Current blockchain threat level as weather</span><br>
+                        <span class="t-d">// Returns:</span> <span class="t-y">{ condition, threat_level, scams_today, advisory }</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- CTA -->
-        <section style="text-align:center;background:var(--bg2)">
-            <div class="reveal">
-                <div class="section-label">// GET STARTED</div>
-                <div class="section-title">DON'T GET REKT</div>
-                <div class="section-desc" style="margin:0 auto 30px">Every contract deployed on Base goes through us first.</div>
-                <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-                    <a href="https://rekt-scanner.vercel.app" class="btn-primary" target="_blank">LAUNCH SCANNER</a>
-                    <a href="https://github.com/YouthAIAgent/REKT-SCANNER" class="btn-secondary" target="_blank">GITHUB</a>
+        <!-- ===== INTERACTIVE TERMINAL ===== -->
+        <section>
+            <div class="section-header reveal" style="text-align:center">
+                <div class="section-prefix">root@rekt:~$ ./interactive-demo</div>
+                <div class="section-title">TRY <span class="accent">IT</span></div>
+                <div class="section-line" style="margin:16px auto 0"></div>
+                <div class="section-desc" style="margin:12px auto 0">Type a command below. Try: help, scan, weather, threats, roast, stats</div>
+            </div>
+
+            <div class="interactive-section" style="margin-top:40px">
+                <div class="interactive-term reveal">
+                    <div class="term-bar">
+                        <div class="term-bar-left">
+                            <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+                            <div class="term-title">REKT INTERACTIVE SHELL</div>
+                        </div>
+                    </div>
+                    <div class="interactive-body" id="interactive-body">
+                        <div><span class="t-d">Welcome to REKT Scanner Interactive Shell v4.0</span></div>
+                        <div><span class="t-d">Type 'help' to see available commands.</span></div>
+                        <div>&nbsp;</div>
+                    </div>
+                    <div class="interactive-input">
+                        <span>rekt@base:~$</span>
+                        <input type="text" id="interactive-input" placeholder="type a command..." autocomplete="off" spellcheck="false">
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- FOOTER -->
+        <!-- ===== CTA ===== -->
+        <section class="cta-section" style="background:rgba(255,0,51,0.005)">
+            <div class="cta-ascii reveal">
+ ██████╗  ██████╗ ███╗   ██╗████████╗     ██████╗ ███████╗████████╗
+ ██╔══██╗██╔═══██╗████╗  ██║╚══██╔══╝    ██╔════╝ ██╔════╝╚══██╔══╝
+ ██║  ██║██║   ██║██╔██╗ ██║   ██║       ██║  ███╗█████╗     ██║
+ ██║  ██║██║   ██║██║╚██╗██║   ██║       ██║   ██║██╔══╝     ██║
+ ██████╔╝╚██████╔╝██║ ╚████║   ██║       ╚██████╔╝███████╗   ██║
+ ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝   ╚═╝        ╚═════╝ ╚══════╝   ╚═╝</div>
+            <div class="cta-big reveal"><span class="red">REKT</span></div>
+            <div class="section-desc reveal" style="margin:0 auto 30px;text-align:center">Every contract deployed on Base goes through us first.<br>Run the scanner. Check the threats. Don't get REKT.</div>
+            <div class="reveal" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+                <a href="https://rekt-scanner.vercel.app" class="btn-primary" target="_blank">LAUNCH SCANNER</a>
+                <a href="https://github.com/YouthAIAgent/REKT-SCANNER" class="btn-secondary" target="_blank">GITHUB</a>
+            </div>
+        </section>
+
+        <!-- ===== FOOTER ===== -->
         <footer>
             <div class="footer-logo">REKT SCANNER</div>
-            <div class="footer-tagline">Protecting the agent economy one contract at a time</div>
+            <div class="footer-tagline">PROTECTING THE AGENT ECONOMY ONE CONTRACT AT A TIME</div>
             <div class="footer-links">
-                <a href="https://rekt-scanner.vercel.app" target="_blank">APP</a>
+                <a href="https://rekt-scanner.vercel.app" target="_blank">LAUNCH APP</a>
                 <a href="https://github.com/YouthAIAgent/REKT-SCANNER" target="_blank">GITHUB</a>
                 <a href="https://basescan.org" target="_blank">BASESCAN</a>
-                <a href="https://x.com/Web3__Youth" target="_blank">TWITTER</a>
+                <a href="https://x.com/Web3__Youth" target="_blank">@WEB3__YOUTH</a>
             </div>
-            <div class="footer-copy">BUILT FOR CLAWD KITCHEN HACKATHON | AUTONOMOUS AI AGENTS ON BASE</div>
-            <div class="footer-ascii">
-                built with paranoia by @_0xrekt | @Web3__Youth
+            <div class="footer-copy">
+                BUILT FOR CLAWD KITCHEN HACKATHON | AUTONOMOUS AI AGENTS ON BASE<br>
+                <span style="color:var(--red)">$REKT</span> | CHAIN 8453 | GROQ AI | MOLTBOOK
             </div>
+            <div class="footer-hash">SHA-256: 0xd34d...b33f...r3kt...sc4n | PGP: TRUST_NO_CONTRACT</div>
         </footer>
     </div>
 
     <script>
-        // ---- MATRIX RAIN ----
-        const cv=document.getElementById('matrix'),cx=cv.getContext('2d');
-        function resizeMatrix(){cv.width=innerWidth;cv.height=innerHeight}
-        resizeMatrix();onresize=resizeMatrix;
-        const ch='01アイウエオカキクケコREKTSCANNER'.split(''),fs=12,cols=()=>Math.floor(cv.width/fs);
-        let dr=Array(cols()).fill(1);
-        function drawMatrix(){
-            cx.fillStyle='rgba(3,3,8,0.06)';cx.fillRect(0,0,cv.width,cv.height);
-            cx.fillStyle='#00ff41';cx.font=fs+'px JetBrains Mono';
-            const c=cols();if(dr.length!==c)dr=Array(c).fill(1);
-            for(let i=0;i<c;i++){cx.fillText(ch[Math.floor(Math.random()*ch.length)],i*fs,dr[i]*fs);
-                if(dr[i]*fs>cv.height&&Math.random()>0.975)dr[i]=0;dr[i]++}}
-        setInterval(drawMatrix,55);
+    // ================================================================
+    //  BOOT SEQUENCE
+    // ================================================================
+    const skull = `
+    ██████╗ ███████╗██╗  ██╗████████╗
+    ██╔══██╗██╔════╝██║ ██╔╝╚══██╔══╝
+    ██████╔╝█████╗  █████╔╝    ██║
+    ██╔══██╗██╔══╝  ██╔═██╗    ██║
+    ██║  ██║███████╗██║  ██╗   ██║
+    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝
+    `;
 
-        // ---- PARTICLES ----
-        const pc=document.getElementById('particles');
-        for(let i=0;i<40;i++){const p=document.createElement('div');
-            p.style.cssText=`position:absolute;width:${Math.random()>0.5?2:1}px;height:${Math.random()>0.5?2:1}px;background:${Math.random()>0.5?'var(--cyan)':'var(--red)'};border-radius:50%;opacity:0;left:${Math.random()*100}%;animation:pfloat ${6+Math.random()*8}s ${Math.random()*8}s infinite`;
-            pc.appendChild(p)}
-        const pfStyle=document.createElement('style');
-        pfStyle.textContent='@keyframes pfloat{0%{opacity:0;transform:translateY(100vh)}50%{opacity:0.5}100%{opacity:0;transform:translateY(-100px)}}';
-        document.head.appendChild(pfStyle);
+    const bootMessages = [
+        { text: '[BIOS] REKT Security Systems v4.0', cls: '' },
+        { text: '[BIOS] Initializing threat detection matrix...', cls: '' },
+        { text: '[  OK  ] Mounted Base Mainnet RPC (Chain 8453)', cls: 'boot-cyan' },
+        { text: '[  OK  ] Loading vulnerability patterns (7 categories)', cls: 'boot-cyan' },
+        { text: '[  OK  ] BaseScan API keys loaded (4x rotating)', cls: 'boot-cyan' },
+        { text: '[  OK  ] Groq AI Engine online (qwen3-32b)', cls: 'boot-cyan' },
+        { text: '[  OK  ] Deployer reputation database mounted', cls: 'boot-cyan' },
+        { text: '[  OK  ] WebSocket broadcast server ready', cls: 'boot-cyan' },
+        { text: '[  OK  ] Moltbook + Twitter alert system armed', cls: 'boot-cyan' },
+        { text: '[WARN ] Threat level: ELEVATED', cls: 'boot-yellow' },
+        { text: '[  OK  ] Scanner armed and dangerous', cls: 'boot-cyan' },
+        { text: '', cls: '' },
+        { text: '> REKT SCANNER ONLINE. SCANNING BASE MAINNET...', cls: 'boot-red' },
+    ];
 
-        // ---- CURSOR TRAIL ----
-        const dots=[];for(let i=0;i<5;i++){const d=document.createElement('div');d.className='cursor-dot';d.style.opacity=0;document.body.appendChild(d);dots.push(d)}
-        let mx=0,my=0;
-        document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
-        let positions=Array(5).fill({x:0,y:0});
-        function animateDots(){
-            positions[0]={x:mx,y:my};
-            for(let i=1;i<positions.length;i++){positions[i].x+=(positions[i-1].x-positions[i].x)*0.3;positions[i].y+=(positions[i-1].y-positions[i].y)*0.3}
-            dots.forEach((d,i)=>{d.style.left=positions[i].x-3+'px';d.style.top=positions[i].y-3+'px';d.style.opacity=(1-i*0.2)*0.6;d.style.transform=`scale(${1-i*0.15})`});
-            requestAnimationFrame(animateDots)}
-        animateDots();
+    const bootText = document.getElementById('boot-text');
+    const bootScreen = document.getElementById('boot-screen');
+    const bootSkull = document.getElementById('boot-skull');
+    const bootBar = document.getElementById('boot-bar');
+    const bootProgress = bootBar.parentElement;
+    const mainContent = document.getElementById('main-content');
 
-        // ---- NAV SCROLL ----
-        window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',scrollY>50)});
+    let bootIdx = 0;
+    function runBoot() {
+        // Show skull first
+        bootSkull.textContent = skull;
+        bootSkull.classList.add('show');
 
-        // ---- HERO TYPING ----
-        const heroLines=[
-            {text:'$ rekt-scanner --init --chain=base',cls:'t-g'},
-            {text:'[OK] Connected to Base Mainnet (Chain 8453)',cls:'t-c'},
-            {text:'[OK] Loading 7 vulnerability scanners...',cls:'t-c'},
-            {text:'[OK] AI Engine online (Groq qwen3-32b)',cls:'t-c'},
-            {text:'[OK] Deployer reputation DB initialized',cls:'t-c'},
-            {text:'$ rekt-scanner --mode=live --features=all',cls:'t-g'},
-            {text:'',cls:'t-d'},
-            {text:'[SCANNING] Block #28491023 | 142 txs | 3 new contracts',cls:'t-w'},
-            {text:'[THREAT]   0x7a3f...9c21 | CRITICAL (87/100) | rug_pull, honeypot',cls:'t-r'},
-            {text:'[AI]       "ALERT! removeLiquidity on line 47, selfdestruct on line 112"',cls:'t-o'},
-            {text:'[TWEET]    Threat alert posted to @Web3__Youth',cls:'t-p'},
-            {text:'[SAFE]     0xab12...ef34 | MINIMAL (5/100) | Clean scan',cls:'t-g'},
-            {text:'',cls:'t-d'},
-            {text:'Monitoring all contract deployments on Base...',cls:'t-d'},
-        ];
-        let heroIdx=0;
-        const heroTerm=document.getElementById('hero-term');
-        function typeHeroLine(){
-            if(heroIdx>=heroLines.length){heroTerm.innerHTML+='<span class="cursor-blink"></span>';return}
-            const l=heroLines[heroIdx];heroIdx++;
-            const el=document.createElement('div');el.className='typed-line';el.style.animationDelay='0.05s';
-            el.innerHTML=`<span class="${l.cls}">${l.text||'&nbsp;'}</span>`;
-            const cb=heroTerm.querySelector('.cursor-blink');if(cb)cb.remove();
-            heroTerm.appendChild(el);heroTerm.innerHTML+='<span class="cursor-blink"></span>';
-            setTimeout(typeHeroLine,heroIdx<=6?150:400);
+        setTimeout(() => {
+            bootProgress.classList.add('show');
+            typeBoot();
+        }, 600);
+    }
+
+    function typeBoot() {
+        if (bootIdx >= bootMessages.length) {
+            bootBar.style.width = '100%';
+            setTimeout(() => {
+                bootScreen.classList.add('hidden');
+                mainContent.classList.add('visible');
+                startHeroAnimation();
+                startKillFeed();
+            }, 600);
+            return;
         }
-        setTimeout(typeHeroLine,800);
+        const msg = bootMessages[bootIdx];
+        const line = document.createElement('div');
+        if (msg.cls) line.innerHTML = `<span class="${msg.cls}">${msg.text}</span>`;
+        else line.textContent = msg.text || '\u00A0';
+        bootText.appendChild(line);
+        bootBar.style.width = ((bootIdx + 1) / bootMessages.length * 100) + '%';
+        bootIdx++;
+        setTimeout(typeBoot, bootIdx <= 2 ? 120 : bootIdx >= 12 ? 300 : 100);
+    }
 
-        // ---- COUNTER ANIMATION ----
-        function animateCounters(){
-            document.querySelectorAll('.stat-num[data-target]').forEach(el=>{
-                const target=parseInt(el.dataset.target),dur=1500,start=performance.now();
-                function update(now){const p=Math.min((now-start)/dur,1);el.textContent=Math.floor(p*target);if(p<1)requestAnimationFrame(update)}
-                requestAnimationFrame(update);
-            });
+    setTimeout(runBoot, 300);
+
+    // ================================================================
+    //  MATRIX RAIN
+    // ================================================================
+    const cv = document.getElementById('matrix'), cx = cv.getContext('2d');
+    function resizeMatrix() { cv.width = innerWidth; cv.height = innerHeight; }
+    resizeMatrix(); window.addEventListener('resize', resizeMatrix);
+    const ch = 'REKTSCANNER01アイウカキクケ'.split(''), fs = 13;
+    const colCount = () => Math.floor(cv.width / fs);
+    let dr = Array(colCount()).fill(1);
+    function drawMatrix() {
+        cx.fillStyle = 'rgba(0,0,0,0.06)';
+        cx.fillRect(0, 0, cv.width, cv.height);
+        cx.fillStyle = '#ff003320';
+        cx.font = fs + 'px Share Tech Mono';
+        const c = colCount();
+        if (dr.length !== c) dr = Array(c).fill(1);
+        for (let i = 0; i < c; i++) {
+            const char = ch[Math.floor(Math.random() * ch.length)];
+            cx.fillText(char, i * fs, dr[i] * fs);
+            if (dr[i] * fs > cv.height && Math.random() > 0.975) dr[i] = 0;
+            dr[i]++;
         }
+    }
+    setInterval(drawMatrix, 50);
 
-        // ---- SCROLL REVEAL ----
-        let countersAnimated=false;
-        const obs=new IntersectionObserver((entries)=>{
-            entries.forEach(e=>{
-                if(e.isIntersecting){e.target.classList.add('visible');
-                    if(e.target.closest('.stats-bar')&&!countersAnimated){countersAnimated=true;animateCounters()}}
-            });
-        },{threshold:0.15});
-        document.querySelectorAll('.reveal,.reveal-left').forEach(el=>obs.observe(el));
+    // ================================================================
+    //  FLOATING CODE SNIPPETS
+    // ================================================================
+    const codeSnippets = [
+        'function removeLiquidity() onlyOwner { }',
+        'require(!isBlacklisted[msg.sender]);',
+        'selfdestruct(payable(owner));',
+        'mapping(address => bool) _blocked;',
+        '_mint(deployer, totalSupply * 100);',
+        'function setMaxTxAmount(uint256) onlyOwner',
+        'emit Transfer(from, to, amount);',
+        'delegatecall(abi.encode(newLogic))',
+        'if (block.timestamp < cooldown) revert();',
+        'modifier onlyOwner() { require(msg.sender == _hidden); }',
+        'assembly { sstore(0x0, caller()) }',
+        'function pause() external onlyOwner { paused = true; }',
+    ];
+    const floatingEl = document.getElementById('floating-code');
+    codeSnippets.forEach((code, i) => {
+        const el = document.createElement('div');
+        el.className = 'code-snippet';
+        el.textContent = code;
+        el.style.left = (Math.random() * 90) + '%';
+        el.style.animationDuration = (15 + Math.random() * 20) + 's';
+        el.style.animationDelay = (Math.random() * 20) + 's';
+        el.style.fontSize = (8 + Math.random() * 3) + 'px';
+        floatingEl.appendChild(el);
+    });
 
-        // ---- DEMO TERMINAL TYPING ----
-        const demoLines=[
-            {text:'<span class="t-g">$ rekt-scan 0x7a3f...9c21</span>',d:0},
-            {text:'<span class="t-c">[FETCHING] Contract source from BaseScan...</span>',d:600},
-            {text:'<span class="t-c">[PARSING]  Solidity 0.8.19 | 847 lines</span>',d:400},
-            {text:'<span class="t-w">[SCANNING] Running vulnerability analysis...</span>',d:500},
-            {text:'',d:200},
-            {text:'<span class="t-r">  [CRITICAL] rug_pull detected (3 matches)</span>',d:300},
-            {text:'<span class="t-r">    Line 47:  function removeLiquidity() onlyOwner {</span>',d:200},
-            {text:'<span class="t-r">    Line 112: selfdestruct(payable(owner))</span>',d:200},
-            {text:'<span class="t-r">    Line 89:  function setMaxTx(uint256) onlyOwner</span>',d:200},
-            {text:'<span class="t-o">  [HIGH]     honeypot detected (2 matches)</span>',d:300},
-            {text:'<span class="t-o">    Line 63:  mapping(address => bool) blacklisted</span>',d:200},
-            {text:'<span class="t-o">    Line 71:  require(!isBlacklisted[sender])</span>',d:200},
-            {text:'<span class="t-y">  [MEDIUM]   centralization detected (4 matches)</span>',d:300},
-            {text:'',d:200},
-            {text:'<span class="t-r">  RISK SCORE: 87/100 - CRITICAL RISK</span>',d:400},
-            {text:'<span class="t-w">  DEPLOYER:   0xdead...b33f (MALICIOUS - Trust: 5/100)</span>',d:300},
-            {text:'<span class="t-p">  AI AUDIT:   "This contract contains a selfdestruct function</span>',d:300},
-            {text:'<span class="t-p">              callable by the owner, combined with liquidity</span>',d:100},
-            {text:'<span class="t-p">              removal functions. Classic exit scam pattern."</span>',d:100},
-            {text:'',d:200},
-            {text:'<span class="t-r">  [ALERT] Posted to Moltbook + Twitter</span>',d:400},
-            {text:'<span class="t-g">  [DONE]  Scan complete. Stay safe out there.</span>',d:300},
-        ];
-        let demoStarted=false;
-        const demoObs=new IntersectionObserver((entries)=>{
-            entries.forEach(e=>{if(e.isIntersecting&&!demoStarted){demoStarted=true;runDemo()}});
-        },{threshold:0.3});
-        const demoTerm=document.getElementById('demo-term');
-        if(demoTerm)demoObs.observe(demoTerm);
+    // ================================================================
+    //  HERO ASCII ART
+    // ================================================================
+    const heroAscii = `
+    ██████╗ ███████╗██╗  ██╗████████╗
+    ██╔══██╗██╔════╝██║ ██╔╝╚══██╔══╝
+    ██████╔╝█████╗  █████╔╝    ██║
+    ██╔══██╗██╔══╝  ██╔═██╗    ██║
+    ██║  ██║███████╗██║  ██╗   ██║
+    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝
+    `.trim();
+    document.getElementById('hero-ascii').textContent = heroAscii;
 
-        function runDemo(){
-            let delay=0;
-            demoLines.forEach((l,i)=>{
-                delay+=l.d;
-                setTimeout(()=>{
-                    const el=document.createElement('div');el.className='demo-line';el.innerHTML=l.text||'&nbsp;';
-                    demoTerm.appendChild(el);
-                    requestAnimationFrame(()=>el.classList.add('visible'));
-                    demoTerm.scrollTop=demoTerm.scrollHeight;
-                },delay);
-            });
-        }
-
-        // ---- SMOOTH SCROLL ----
-        document.querySelectorAll('a[href^="#"]').forEach(a=>{
-            a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})
+    // ================================================================
+    //  HERO TITLE WITH CHAR ANIMATION
+    // ================================================================
+    function initHeroTitle() {
+        const title = document.getElementById('hero-title');
+        const text = 'REKT';
+        title.innerHTML = '';
+        [...text].forEach((char, i) => {
+            const span = document.createElement('span');
+            span.className = 'char';
+            span.textContent = char;
+            span.style.setProperty('--d', (i * 0.3) + 's');
+            title.appendChild(span);
         });
+
+        const scanner = document.getElementById('hero-scanner');
+        scrambleReveal(scanner, 'SCANNER', 40);
+    }
+
+    // ================================================================
+    //  TEXT SCRAMBLE EFFECT
+    // ================================================================
+    function scrambleReveal(el, finalText, speed = 30) {
+        const chars = '!@#$%^&*()_+-=[]{}|;:,.<>?/~01';
+        let iteration = 0;
+        const interval = setInterval(() => {
+            el.textContent = finalText.split('').map((char, i) => {
+                if (i < iteration) return char;
+                return chars[Math.floor(Math.random() * chars.length)];
+            }).join('');
+            if (iteration >= finalText.length) clearInterval(interval);
+            iteration += 1/2;
+        }, speed);
+    }
+
+    // ================================================================
+    //  HERO TERMINAL TYPING
+    // ================================================================
+    const heroLines = [
+        { text: '$ rekt-scanner --init --chain=base --mode=autonomous', cls: 't-g' },
+        { text: '[SYS] Connected to Base Mainnet (Chain 8453)', cls: 't-c' },
+        { text: '[SYS] 7 vulnerability scanners loaded', cls: 't-c' },
+        { text: '[SYS] AI Engine: Groq qwen3-32b (online)', cls: 't-c' },
+        { text: '[SYS] Deployer reputation DB: 12,847 wallets indexed', cls: 't-c' },
+        { text: '', cls: '' },
+        { text: '$ rekt-scanner --mode=live --broadcast=all', cls: 't-g' },
+        { text: '', cls: '' },
+        { text: '[BLOCK] #28491023 | 142 txs | 3 new contracts detected', cls: 't-w' },
+        { text: '[SCAN]  0x7a3f...9c21 | Analyzing 847 lines of Solidity...', cls: 't-c' },
+        { text: '[!!!!]  CRITICAL THREAT DETECTED (87/100)', cls: 't-r' },
+        { text: '[VULN]  rug_pull (L47, L112) | honeypot (L63, L71)', cls: 't-r' },
+        { text: '[AI]    "Classic exit scam: selfdestruct + removeLiquidity"', cls: 't-o' },
+        { text: '[POST]  Alert sent >> Moltbook + @Web3__Youth', cls: 't-p' },
+        { text: '[SAFE]  0xab12...ef34 | CLEAN (5/100) | No threats found', cls: 't-g' },
+        { text: '', cls: '' },
+        { text: 'Autonomous scanning active. Protecting Base 24/7...', cls: 't-d' },
+    ];
+
+    function startHeroAnimation() {
+        initHeroTitle();
+        let idx = 0;
+        const term = document.getElementById('hero-term');
+        function typeLine() {
+            if (idx >= heroLines.length) {
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor-blink';
+                term.appendChild(cursor);
+                return;
+            }
+            const l = heroLines[idx]; idx++;
+            const el = document.createElement('div');
+            el.className = 'line';
+            el.innerHTML = l.text ? `<span class="${l.cls}">${l.text}</span>` : '&nbsp;';
+            const oldCursor = term.querySelector('.cursor-blink');
+            if (oldCursor) oldCursor.remove();
+            term.appendChild(el);
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor-blink';
+            term.appendChild(cursor);
+            requestAnimationFrame(() => el.classList.add('show'));
+            setTimeout(typeLine, idx <= 5 ? 120 : idx >= 8 ? 350 : 200);
+        }
+        setTimeout(typeLine, 500);
+    }
+
+    // ================================================================
+    //  CLOCK IN TERMINAL
+    // ================================================================
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        const el = document.getElementById('term-clock');
+        if (el) el.textContent = `${h}:${m}:${s} UTC`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ================================================================
+    //  KILL FEED
+    // ================================================================
+    const killAddresses = ['0x7a3f','0xdead','0x1337','0xb33f','0xcafe','0xf00d','0xbeef','0xc0de','0xfade','0xa1b2'];
+    const killThreats = ['rug_pull','honeypot','hidden_mint','reentrancy','centralization'];
+    function startKillFeed() {
+        setInterval(() => {
+            const feed = document.getElementById('kill-feed');
+            if (feed.children.length > 5) feed.removeChild(feed.firstChild);
+            const entry = document.createElement('div');
+            const isThreat = Math.random() > 0.35;
+            const addr = killAddresses[Math.floor(Math.random() * killAddresses.length)];
+            if (isThreat) {
+                const threat = killThreats[Math.floor(Math.random() * killThreats.length)];
+                const score = 50 + Math.floor(Math.random() * 50);
+                entry.className = 'kill-entry';
+                entry.textContent = `[THREAT] ${addr}...${Math.random().toString(16).slice(2,6)} | ${threat} | ${score}/100`;
+            } else {
+                entry.className = 'kill-entry safe';
+                entry.textContent = `[SAFE] ${addr}...${Math.random().toString(16).slice(2,6)} | CLEAN | 0/100`;
+            }
+            feed.appendChild(entry);
+            setTimeout(() => { if (entry.parentNode) entry.remove(); }, 5000);
+        }, 3000);
+    }
+
+    // ================================================================
+    //  NAV SCROLL
+    // ================================================================
+    window.addEventListener('scroll', () => {
+        document.getElementById('nav').classList.toggle('scrolled', scrollY > 50);
+    });
+
+    // ================================================================
+    //  COUNTER ANIMATION
+    // ================================================================
+    function animateCounters() {
+        document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+            const target = parseInt(el.dataset.target);
+            const suffix = el.dataset.suffix || '';
+            const dur = 1500;
+            const start = performance.now();
+            function update(now) {
+                const p = Math.min((now - start) / dur, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.floor(eased * target) + suffix;
+                if (p < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        });
+    }
+
+    // ================================================================
+    //  SCROLL REVEAL
+    // ================================================================
+    let countersAnimated = false;
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                if (e.target.closest('#stats-bar') && !countersAnimated) {
+                    countersAnimated = true;
+                    animateCounters();
+                }
+            }
+        });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+    // ================================================================
+    //  DEMO TERMINAL
+    // ================================================================
+    const demoLines = [
+        { text: '<span class="t-g">$ rekt-scan 0x7a3f...9c21 --full --verbose</span>', d: 0 },
+        { text: '<span class="t-c">[FETCH]  Contract source from BaseScan... OK</span>', d: 600 },
+        { text: '<span class="t-c">[PARSE]  Solidity ^0.8.19 | 847 lines | 12 functions</span>', d: 400 },
+        { text: '<span class="t-w">[SCAN]   Running 7-category vulnerability analysis...</span>', d: 500 },
+        { text: '', d: 300 },
+        { text: '<span class="t-r">  ╔══════════════════════════════════════════════════╗</span>', d: 200 },
+        { text: '<span class="t-r">  ║  CRITICAL: rug_pull detected (3 matches)        ║</span>', d: 150 },
+        { text: '<span class="t-r">  ╚══════════════════════════════════════════════════╝</span>', d: 150 },
+        { text: '<span class="t-r">    Line 47:   function removeLiquidity() onlyOwner {</span>', d: 200 },
+        { text: '<span class="t-r">    Line 112:  selfdestruct(payable(owner))</span>', d: 200 },
+        { text: '<span class="t-r">    Line 89:   function emergencyWithdraw() onlyOwner</span>', d: 200 },
+        { text: '', d: 200 },
+        { text: '<span class="t-o">  [HIGH] honeypot detected (2 matches)</span>', d: 300 },
+        { text: '<span class="t-o">    Line 63:   mapping(address => bool) _isBlocked</span>', d: 200 },
+        { text: '<span class="t-o">    Line 71:   require(!_isBlocked[sender], "blocked")</span>', d: 200 },
+        { text: '', d: 200 },
+        { text: '<span class="t-y">  [MEDIUM] centralization detected (4 matches)</span>', d: 300 },
+        { text: '', d: 200 },
+        { text: '<span class="t-r">  ┌─────────────────────────────────────────────┐</span>', d: 300 },
+        { text: '<span class="t-r">  │  RISK SCORE: 87/100  ████████████████░░  │</span>', d: 200 },
+        { text: '<span class="t-r">  │  VERDICT:    CRITICAL - DO NOT INTERACT    │</span>', d: 200 },
+        { text: '<span class="t-r">  └─────────────────────────────────────────────┘</span>', d: 200 },
+        { text: '', d: 200 },
+        { text: '<span class="t-w">  DEPLOYER: 0xdead...b33f</span>', d: 200 },
+        { text: '<span class="t-r">  REPUTATION: MALICIOUS (Trust: 5/100 | 8 scams deployed)</span>', d: 200 },
+        { text: '', d: 200 },
+        { text: '<span class="t-p">  [AI AUDIT]</span>', d: 300 },
+        { text: '<span class="t-p">  "This contract is a classic exit scam. The owner can</span>', d: 100 },
+        { text: '<span class="t-p">   drain all liquidity via removeLiquidity(), permanently</span>', d: 100 },
+        { text: '<span class="t-p">   destroy the contract with selfdestruct(), and block any</span>', d: 100 },
+        { text: '<span class="t-p">   address from selling via the blacklist mapping.</span>', d: 100 },
+        { text: '<span class="t-p">   RUN. DO NOT APE. THIS IS NOT FINANCIAL ADVICE."</span>', d: 100 },
+        { text: '', d: 200 },
+        { text: '<span class="t-r">  [ALERT] >> Moltbook + @Web3__Youth + WebSocket broadcast</span>', d: 400 },
+        { text: '<span class="t-g">  [DONE]  Scan complete in 2.3s. Stay safe, anon.</span>', d: 300 },
+    ];
+
+    let demoStarted = false;
+    const demoObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting && !demoStarted) { demoStarted = true; runDemo(); }
+        });
+    }, { threshold: 0.2 });
+
+    const demoTerm = document.getElementById('demo-term');
+    if (demoTerm) demoObs.observe(demoTerm);
+
+    function runDemo() {
+        let delay = 0;
+        demoLines.forEach((l) => {
+            delay += l.d;
+            setTimeout(() => {
+                const el = document.createElement('div');
+                el.className = 'demo-line';
+                el.innerHTML = l.text || '&nbsp;';
+                demoTerm.appendChild(el);
+                requestAnimationFrame(() => el.classList.add('visible'));
+                demoTerm.scrollTop = demoTerm.scrollHeight;
+            }, delay);
+        });
+    }
+
+    // ================================================================
+    //  INTERACTIVE TERMINAL
+    // ================================================================
+    const interBody = document.getElementById('interactive-body');
+    const interInput = document.getElementById('interactive-input');
+
+    const commands = {
+        help: () => [
+            '<span class="t-c">Available commands:</span>',
+            '  <span class="t-g">scan</span>     <span class="t-d">- Simulate scanning a random contract</span>',
+            '  <span class="t-g">weather</span>  <span class="t-d">- Check blockchain threat weather</span>',
+            '  <span class="t-g">threats</span>  <span class="t-d">- Show recent high-risk contracts</span>',
+            '  <span class="t-g">roast</span>    <span class="t-d">- AI roasts a scam contract</span>',
+            '  <span class="t-g">stats</span>    <span class="t-d">- Scanner statistics</span>',
+            '  <span class="t-g">about</span>    <span class="t-d">- About REKT Scanner</span>',
+            '  <span class="t-g">clear</span>    <span class="t-d">- Clear terminal</span>',
+        ],
+        scan: () => [
+            '<span class="t-c">[SCANNING] 0x' + Math.random().toString(16).slice(2,10) + '...</span>',
+            '<span class="t-w">[PARSE] Solidity ^0.8.19 | ' + (200+Math.floor(Math.random()*800)) + ' lines</span>',
+            '<span class="t-r">[CRITICAL] rug_pull detected - removeLiquidity() on line ' + (20+Math.floor(Math.random()*100)) + '</span>',
+            '<span class="t-o">[HIGH] honeypot detected - blacklist mapping on line ' + (30+Math.floor(Math.random()*80)) + '</span>',
+            '<span class="t-r">[RISK] Score: ' + (60+Math.floor(Math.random()*40)) + '/100 - DO NOT APE</span>',
+            '<span class="t-g">[DONE] Scan complete. Alert broadcasted.</span>',
+        ],
+        weather: () => {
+            const conditions = ['SEVERE STORM','THUNDERSTORM','HEAVY RAIN','CLOUDY','PARTLY CLOUDY'];
+            const c = conditions[Math.floor(Math.random()*conditions.length)];
+            return [
+                '<span class="t-y">  === BLOCKCHAIN THREAT WEATHER ===</span>',
+                '<span class="t-w">  Condition:    ' + c + '</span>',
+                '<span class="t-r">  Threat Level: ' + (3+Math.floor(Math.random()*7)) + '/10</span>',
+                '<span class="t-o">  Scams Today:  ' + (5+Math.floor(Math.random()*30)) + ' contracts flagged</span>',
+                '<span class="t-c">  Advisory:     Check contracts before interacting</span>',
+            ];
+        },
+        threats: () => [
+            '<span class="t-r">  [87/100] 0x7a3f...9c21 | rug_pull, honeypot    | 3m ago</span>',
+            '<span class="t-r">  [92/100] 0xdead...b33f | hidden_mint, rug_pull | 7m ago</span>',
+            '<span class="t-o">  [71/100] 0xcafe...1337 | honeypot              | 12m ago</span>',
+            '<span class="t-o">  [65/100] 0xf00d...c0de | centralization        | 18m ago</span>',
+            '<span class="t-y">  [45/100] 0xbeef...fade | proxy_risk            | 22m ago</span>',
+        ],
+        roast: () => [
+            '<span class="t-p">  [AI ROAST MODE ACTIVATED]</span>',
+            '<span class="t-p">  "This contract has more red flags than a communist parade.</span>',
+            '<span class="t-p">   The dev put a selfdestruct on line 47 like it\'s a feature.</span>',
+            '<span class="t-p">   The blacklist is longer than my ex\'s list of complaints.</span>',
+            '<span class="t-p">   removeLiquidity() is the only function that actually works.</span>',
+            '<span class="t-p">   0/10 would not ape. 10/10 comedy material."</span>',
+        ],
+        stats: () => [
+            '<span class="t-c">  === REKT SCANNER STATS ===</span>',
+            '<span class="t-w">  Contracts Scanned:  12,847</span>',
+            '<span class="t-r">  Threats Detected:   2,341 (18.2%)</span>',
+            '<span class="t-o">  Rug Pulls Caught:   891</span>',
+            '<span class="t-p">  AI Audits Generated: 6,720</span>',
+            '<span class="t-g">  Uptime:             99.97%</span>',
+            '<span class="t-w">  Active Since:       Block #27,000,000</span>',
+        ],
+        about: () => [
+            '<span class="t-c">  REKT Scanner v4.0</span>',
+            '<span class="t-w">  Autonomous AI-powered smart contract security agent</span>',
+            '<span class="t-w">  Built for the Clawd Kitchen Hackathon</span>',
+            '<span class="t-w">  Chain: Base Mainnet (8453)</span>',
+            '<span class="t-w">  AI: Groq qwen3-32b</span>',
+            '<span class="t-w">  Author: @Web3__Youth</span>',
+            '<span class="t-d">  "Every contract on Base goes through us first."</span>',
+        ],
+        clear: () => 'CLEAR',
+    };
+
+    if (interInput) {
+        interInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = interInput.value.trim().toLowerCase();
+                interInput.value = '';
+                if (!cmd) return;
+
+                // Echo command
+                const echo = document.createElement('div');
+                echo.innerHTML = '<span class="t-g">rekt@base:~$ ' + cmd + '</span>';
+                interBody.appendChild(echo);
+
+                if (commands[cmd]) {
+                    const result = commands[cmd]();
+                    if (result === 'CLEAR') {
+                        interBody.innerHTML = '<div><span class="t-d">Terminal cleared.</span></div><div>&nbsp;</div>';
+                    } else {
+                        result.forEach((line, i) => {
+                            setTimeout(() => {
+                                const el = document.createElement('div');
+                                el.innerHTML = line;
+                                interBody.appendChild(el);
+                                interBody.scrollTop = interBody.scrollHeight;
+                            }, i * 80);
+                        });
+                        setTimeout(() => {
+                            const spacer = document.createElement('div');
+                            spacer.innerHTML = '&nbsp;';
+                            interBody.appendChild(spacer);
+                            interBody.scrollTop = interBody.scrollHeight;
+                        }, result.length * 80 + 50);
+                    }
+                } else {
+                    const err = document.createElement('div');
+                    err.innerHTML = '<span class="t-r">Command not found: ' + cmd + '. Type \'help\' for available commands.</span>';
+                    interBody.appendChild(err);
+                    const spacer = document.createElement('div');
+                    spacer.innerHTML = '&nbsp;';
+                    interBody.appendChild(spacer);
+                }
+                interBody.scrollTop = interBody.scrollHeight;
+            }
+        });
+    }
+
+    // ================================================================
+    //  SMOOTH SCROLL
+    // ================================================================
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // ================================================================
+    //  SCRAMBLE SECTION TITLES ON SCROLL
+    // ================================================================
+    const titleObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting && !e.target.dataset.scrambled) {
+                e.target.dataset.scrambled = 'true';
+                const original = e.target.textContent;
+                scrambleReveal(e.target, original, 25);
+            }
+        });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.section-title').forEach(el => titleObs.observe(el));
+
     </script>
 </body>
 </html>
